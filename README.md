@@ -63,6 +63,16 @@ Image à ajouter : page de login personnalisée
 - Réduire la recherche globale GLPI à une icône loupe.
 - Autoriser l'affichage de Pulse profil par profil depuis l'onglet BrandPulse des profils GLPI.
 
+### Visibilité de Pulse selon le profil
+
+L'affichage de Pulse général peut être autorisé séparément pour chaque profil depuis :
+
+```text
+Administration > Profils > [profil] > BrandPulse
+```
+
+Le droit **Afficher Pulse général** est activé par défaut pour les profils utilisant l'interface standard et désactivé pour les profils self-service. Un administrateur peut adapter ce choix à chaque profil.
+
 ### Installation
 
 Téléchargez l'archive de release, puis déposez le dossier `brandpulse` dans le dossier `plugins` de GLPI.
@@ -172,6 +182,16 @@ Image to add: customised login page
 - Set the refresh interval.
 - Collapse the global GLPI search field into a magnifier icon.
 - Allow General Pulse visibility profile by profile from the BrandPulse tab in GLPI profiles.
+
+### Profile-based Pulse visibility
+
+General Pulse visibility can be enabled separately for each profile from:
+
+```text
+Administration > Profiles > [profile] > BrandPulse
+```
+
+The **Display General Pulse** right is enabled by default for standard-interface profiles and disabled for self-service profiles. Administrators can adjust this setting for each profile.
 
 ### Installation
 
