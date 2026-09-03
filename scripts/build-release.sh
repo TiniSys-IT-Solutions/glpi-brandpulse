@@ -46,6 +46,7 @@ rsync -a ./ "${PACKAGE_DIR}/" \
   cd "${PACKAGE_DIR}"
   composer install --no-dev --no-interaction --prefer-dist --optimize-autoloader --classmap-authoritative
 )
+rm -f "${PACKAGE_DIR}/composer.lock"
 
 if command -v zip >/dev/null 2>&1; then
   (

@@ -36,7 +36,7 @@ function plugin_brandpulse_install(): bool
         return false;
     }
 
-    $migrated = GlpiPlugin\Brandpulse\Migrator::migrate(PLUGIN_BRANDPULSE_VERSION);
+    $migrated = GlpiPlugin\Brandpulse\Migrator::migrate(PLUGIN_BRANDPULSE_SCHEMA_VERSION);
 
     if ($migrated && class_exists(GlpiPlugin\Brandpulse\BrandAssetStore::class)) {
         GlpiPlugin\Brandpulse\BrandAssetStore::ensureBrandDirectory();
