@@ -77,9 +77,9 @@ function plugin_version_brandpulse(): array
     return [
         'name'           => __('GLPI BrandPulse', 'brandpulse'),
         'version'        => PLUGIN_BRANDPULSE_VERSION,
-        'author'         => 'DooSys',
+        'author'         => 'TiniSys IT Solutions',
         'license'        => 'GPLv3+',
-        'homepage'       => 'https://github.com/DooSys/glpi-brandpulse',
+        'homepage'       => 'https://github.com/TiniSys-IT-Solutions/glpi-brandpulse',
         'requirements'   => [
             'glpi' => [
                 'min' => PLUGIN_BRANDPULSE_MIN_GLPI,

@@ -89,7 +89,7 @@ function plugin_brandpulse_config_url(string $tab): string
 
 function plugin_brandpulse_external_url(string $path): string
 {
-    return 'https://github.com/DooSys/glpi-brandpulse/' . ltrim($path, '/');
+    return 'https://github.com/TiniSys-IT-Solutions/glpi-brandpulse/' . ltrim($path, '/');
 }
 
 function plugin_brandpulse_brand_asset_fields(): array

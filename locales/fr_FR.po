@@ -1,7 +1,7 @@
 msgid ""
 msgstr ""
 "Project-Id-Version: GLPI BrandPulse 0.1.14\n"
-"Report-Msgid-Bugs-To: https://github.com/DooSys/glpi-brandpulse/issues\n"
+"Report-Msgid-Bugs-To: https://github.com/TiniSys-IT-Solutions/glpi-brandpulse/issues\n"
 "POT-Creation-Date: 2026-08-10 00:00+0000\n"
 "PO-Revision-Date: 2026-08-10 00:00+0000\n"
 "Last-Translator: DooSys\n"

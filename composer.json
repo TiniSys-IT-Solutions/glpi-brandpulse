@@ -1,11 +1,11 @@
 {
-  "name": "doosys/glpi-brandpulse",
+  "name": "tinisys-it-solutions/glpi-brandpulse",
   "description": "GLPI 11 branding and configurable header counters plugin.",
   "type": "glpi-plugin",
   "license": "GPL-3.0-or-later",
   "authors": [
     {
-      "name": "DooSys"
+      "name": "TiniSys IT Solutions"
     }
   ],
   "require": {

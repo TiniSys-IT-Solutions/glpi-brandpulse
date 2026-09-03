@@ -1,5 +1,11 @@
 # Changelog
 
+## Unreleased
+
+- Align project licensing, ownership metadata, security guidance and
+  contribution documentation with TiniSys IT Solutions standards.
+- Record the Solar Icon Set attribution and applicable third-party licence.
+
 ## 0.1.43
 
 - Replace URL-based Pulse visibility with the native GLPI profile right "Display General Pulse".

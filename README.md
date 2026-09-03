@@ -22,7 +22,7 @@ BrandPulse regroupe quatre espaces de configuration :
 
 ### Captures d'écran
 
-Ajoutez vos images dans cette section.
+Les captures officielles seront ajoutées à cette section.
 
 ```text
 Image à ajouter : page de configuration Brand
@@ -88,6 +88,31 @@ Pour créer des compteurs métier avancés, utilisez le moteur de recherche GLPI
 
 Les images importées depuis BrandPulse restent conservées par GLPI afin de survivre aux mises à jour du plugin.
 
+### Sécurité
+
+Réservez la configuration du plugin aux administrateurs GLPI de confiance et
+effectuez une sauvegarde avant installation ou mise à jour. Consultez la
+[politique de sécurité](SECURITY.md) pour le signalement responsable des
+vulnérabilités.
+
+### Contribution
+
+Les correctifs et améliorations ciblés sont les bienvenus. Consultez le
+[guide de contribution](CONTRIBUTING.md) avant d'ouvrir une pull request.
+
+### Inspirations et crédits
+
+BrandPulse s'appuie sur l'expérience acquise avec plusieurs personnalisations
+et extensions GLPI existantes autour de l'identité visuelle et des indicateurs
+opérationnels. Le plugin actuel possède toutefois sa propre architecture, son
+propre modèle de configuration, ses mécanismes de sécurité et ses intégrations
+GLPI 11. Il est développé et maintenu comme un projet autonome par TiniSys IT
+Solutions.
+
+Le sélecteur d'icônes contient une sélection adaptée du Solar Icon Set. Les
+attributions et conditions applicables sont détaillées dans
+[THIRD_PARTY_NOTICES.md](THIRD_PARTY_NOTICES.md).
+
 ### Licence
 
 GPL-3.0-or-later.
@@ -107,7 +132,7 @@ BrandPulse brings branding and operational visibility into one GLPI plugin:
 
 ### Screenshots
 
-Add your screenshots in this section.
+Official screenshots will be added to this section.
 
 ```text
 Image to add: Brand configuration page
@@ -172,6 +197,29 @@ Setup > Plugins
 For advanced operational counters, create a search in GLPI, save it, then select it in the Pulse tab.
 
 Images imported through BrandPulse are kept in GLPI storage so they remain available across plugin updates.
+
+### Security
+
+Restrict plugin configuration to trusted GLPI administrators and create a
+backup before installation or upgrade. See the [security policy](SECURITY.md)
+for responsible vulnerability reporting.
+
+### Contributing
+
+Focused fixes and improvements are welcome. Read the
+[contribution guide](CONTRIBUTING.md) before opening a pull request.
+
+### Inspirations and credits
+
+BrandPulse builds on experience gained from several existing GLPI
+customisations and extensions dealing with visual identity and operational
+indicators. The current plugin nevertheless has its own architecture,
+configuration model, security controls and GLPI 11 integrations. It is
+developed and maintained as an independent project by TiniSys IT Solutions.
+
+The icon picker contains an adapted selection from the Solar Icon Set.
+Applicable attribution and licensing details are recorded in
+[THIRD_PARTY_NOTICES.md](THIRD_PARTY_NOTICES.md).
 
 ### License
 
