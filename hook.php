@@ -55,6 +55,13 @@ function plugin_brandpulse_uninstall(): bool
         GlpiPlugin\Brandpulse\Profile::uninstallRights();
     }
 
+    if (
+        class_exists(GlpiPlugin\Brandpulse\ProfileCounterStore::class)
+        && !GlpiPlugin\Brandpulse\ProfileCounterStore::uninstall()
+    ) {
+        return false;
+    }
+
     if (class_exists(GlpiPlugin\Brandpulse\Config::class)) {
         GlpiPlugin\Brandpulse\Config::uninstall();
     }

@@ -21,8 +21,9 @@ final class CounterService
     public function getPayload(): array
     {
         $config = Config::values();
+        $profileId = (int) ($_SESSION['glpiactiveprofile']['id'] ?? 0);
 
-        if (!$config['enabled'] || !Profile::canViewGeneralPulse() || $this->userId <= 0) {
+        if (!$config['enabled'] || !Profile::canViewGeneralPulse() || $this->userId <= 0 || $profileId <= 0) {
             return [
                 'enabled' => false,
                 'refresh_interval' => $config['refresh_interval'],
@@ -35,7 +36,9 @@ final class CounterService
             'enabled' => true,
             'refresh_interval' => $config['refresh_interval'],
             'compact_search_enabled' => $config['compact_search_enabled'],
-            'counters' => $this->getCounters($config['counters']),
+            'counters' => $this->getCounters(
+                ProfileCounterStore::resolvedForProfile($profileId, $config['counters'])
+            ),
         ];
     }
 
@@ -271,14 +274,11 @@ final class CounterService
 
     private function canUseSavedSearch(\SavedSearch $savedSearch): bool
     {
-        $isPrivate = (int) ($savedSearch->fields['is_private'] ?? 1) === 1;
-        $ownerId = (int) ($savedSearch->fields['users_id'] ?? 0);
-
-        if ($isPrivate && $ownerId !== $this->userId) {
-            return false;
-        }
-
-        return (int) ($savedSearch->fields['type'] ?? \SavedSearch::SEARCH) === \SavedSearch::SEARCH;
+        return SavedSearchPolicy::canUse(
+            $savedSearch->fields,
+            $this->userId,
+            $savedSearch->canViewItem()
+        );
     }
 
     private function iconUrl(string $icon): string

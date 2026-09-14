@@ -140,5 +140,22 @@ final class Profile extends \Profile
             \Html::closeForm();
         }
         echo '</div>';
+
+        $catalog = Config::values()['counters'];
+        $counterCount = count(ProfileCounterStore::resolvedForProfile($profileId, $catalog));
+        global $CFG_GLPI;
+        $configUrl = rtrim((string) ($CFG_GLPI['root_doc'] ?? ''), '/')
+            . '/plugins/brandpulse/front/config.php?tab=pulse&profile_id=' . $profileId;
+        echo "<div class='firstbloc'>";
+        echo '<h3>' . __('Pulse profile composition', 'brandpulse') . '</h3>';
+        echo '<p>' . sprintf(
+            __('This profile currently receives %d Pulse counters.', 'brandpulse'),
+            $counterCount
+        ) . '</p>';
+        if ($canEdit && Session::haveRight('config', UPDATE)) {
+            echo "<a class='btn btn-outline-secondary' href='" . \Html::entities_deep($configUrl) . "'>";
+            echo __('Configure counters for this profile', 'brandpulse') . '</a>';
+        }
+        echo '</div>';
     }
 }

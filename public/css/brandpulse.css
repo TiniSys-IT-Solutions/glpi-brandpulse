@@ -477,6 +477,69 @@
   display: none;
 }
 
+.brandpulse-profile-pulse-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+}
+
+.brandpulse-profile-pulse-header > div {
+  display: grid;
+  gap: 0.15rem;
+}
+
+.brandpulse-profile-pulse-header > div > span {
+  color: var(--tblr-muted, #667085);
+  font-size: 0.82rem;
+}
+
+.brandpulse-profile-pulse-header .form-select {
+  min-width: min(22rem, 45vw);
+}
+
+.brandpulse-profile-preview {
+  display: grid;
+  gap: 0.6rem;
+  margin-top: 1rem;
+  padding: 0.85rem;
+  background: color-mix(in srgb, var(--tblr-bg-surface-secondary, #f6f8fb) 72%, transparent);
+  border-radius: 0.4rem;
+}
+
+.brandpulse-profile-preview-counters {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.45rem;
+}
+
+.brandpulse-profile-preview-counter {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  padding: 0.35rem 0.55rem;
+  color: var(--tblr-body-color, #1f2937);
+  background: var(--tblr-bg-surface, #ffffff);
+  border: 1px solid var(--tblr-border-color, #d9dee3);
+  border-radius: 0.35rem;
+}
+
+.brandpulse-profile-preview-counter .brandpulse-icon-preview {
+  color: var(--tblr-primary, #206bc4);
+}
+
+@media (max-width: 720px) {
+  .brandpulse-profile-pulse-header {
+    align-items: stretch;
+    flex-direction: column;
+  }
+
+  .brandpulse-profile-pulse-header .form-select {
+    width: 100%;
+    min-width: 0;
+  }
+}
+
 #brandpulse-header-counters.brandpulse-counters {
   --brandpulse-icon-color: var(--tblr-navbar-color, var(--tblr-body-color, #1f2937));
   --brandpulse-icon-plate: color-mix(in srgb, var(--tblr-bg-surface, #ffffff) 72%, transparent);
@@ -843,7 +906,7 @@ section.brandpulse-brand-section > .form-check {
 
 .brandpulse-defaults-body {
   display: grid;
-  grid-template-columns: repeat(2, minmax(0, 1fr));
+  grid-template-columns: repeat(auto-fit, minmax(15rem, 1fr));
   gap: 0.85rem;
   align-items: stretch;
 }
@@ -875,6 +938,7 @@ section.brandpulse-brand-section > .form-check {
 }
 
 .brandpulse-refresh-control,
+.brandpulse-profile-limit-control,
 .brandpulse-search-control {
   display: grid;
   grid-template-columns: minmax(0, 1fr) auto;
@@ -889,6 +953,7 @@ section.brandpulse-brand-section > .form-check {
 }
 
 .brandpulse-refresh-control > span,
+.brandpulse-profile-limit-control > span:first-child,
 .brandpulse-option-label > span:last-child {
   font-size: 0.82rem;
   font-weight: 750;
@@ -905,6 +970,23 @@ section.brandpulse-brand-section > .form-check {
   width: 5rem;
   min-width: 5rem;
   font-weight: 800;
+}
+
+.brandpulse-range-line {
+  display: inline-flex;
+  gap: 0.65rem;
+  align-items: center;
+  min-width: 8rem;
+}
+
+.brandpulse-range-line input {
+  min-width: 6rem;
+}
+
+.brandpulse-range-line output {
+  min-width: 1.5rem;
+  font-weight: 800;
+  text-align: center;
 }
 
 .brandpulse-search-option-icon {

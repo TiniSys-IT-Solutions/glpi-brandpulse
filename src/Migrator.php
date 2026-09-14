@@ -34,6 +34,10 @@ final class Migrator
             self::migrateTo0143();
         }
 
+        if (!ProfileCounterStore::install(Config::values()['counters'])) {
+            return false;
+        }
+
         Config::setSchemaVersion($targetVersion);
 
         return true;

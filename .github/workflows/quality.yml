@@ -4,7 +4,8 @@ on:
   push:
     branches:
       - main
-  pull_request:
+  pull_request: {}
+  workflow_dispatch:
 
 permissions:
   contents: read
@@ -34,6 +35,12 @@ jobs:
       - name: Validate Composer metadata
         run: composer validate --no-check-publish
 
+      - name: Install development dependencies
+        run: composer install --no-interaction --prefer-dist --no-progress
+
+      - name: Run unit tests
+        run: composer test
+
       - name: Lint PHP files
         run: find . -path ./vendor -prune -o -path ./dist -prune -o -name '*.php' -print0 | xargs -0 -n1 php -l
 
@@ -41,4 +48,5 @@ jobs:
         run: node --check public/js/brandpulse.js
 
       - name: Validate plugin XML
-        run: php -r '$xml = simplexml_load_file("brandpulse.xml"); exit($xml === false ? 1 : 0);'
+        run: |
+          php -r 'exit(simplexml_load_file("brandpulse.xml") === false ? 1 : 0);'

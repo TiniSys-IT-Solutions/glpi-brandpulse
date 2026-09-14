@@ -37,10 +37,13 @@ mkdir -p "${PACKAGE_DIR}"
 rsync -a ./ "${PACKAGE_DIR}/" \
   --exclude '.git/' \
   --exclude '.github/' \
+  --exclude '.local/' \
+  --exclude '.phpunit.cache/' \
   --exclude 'dist/' \
+  --exclude 'tests/' \
   --exclude 'vendor/' \
   --exclude '.gitignore' \
-  --exclude 'composer.lock'
+  --exclude 'phpunit.xml.dist'
 
 (
   cd "${PACKAGE_DIR}"

@@ -73,6 +73,20 @@ Administration > Profils > [profil] > BrandPulse
 
 Le droit **Afficher Pulse général** est activé par défaut pour les profils utilisant l'interface standard et désactivé pour les profils self-service. Un administrateur peut adapter ce choix à chaque profil.
 
+La composition de Pulse peut également être définie dans l'onglet **Pulse** de
+BrandPulse. Sélectionnez un profil GLPI, activez jusqu'à six compteurs par défaut
+(limite réglable jusqu'à dix) et choisissez leur ordre. Le changement de profil
+actif recharge automatiquement la
+composition correspondante sans mélanger les autres profils de l'utilisateur.
+
+Les compteurs fondés sur une recherche sauvegardée commune utilisent uniquement
+des recherches publiques. Les résultats restent filtrés par les droits, les
+entités et la récursivité du technicien connecté.
+
+Les compteurs marqués comme obligatoires préparent le futur mode hybride : ils
+formeront le socle que les compléments personnels ne pourront pas masquer. Aucun
+écran de personnalisation utilisateur n'est activé dans cette version.
+
 ### Installation
 
 Téléchargez l'archive de release, puis déposez le dossier `brandpulse` dans le dossier `plugins` de GLPI.
@@ -192,6 +206,20 @@ Administration > Profiles > [profile] > BrandPulse
 ```
 
 The **Display General Pulse** right is enabled by default for standard-interface profiles and disabled for self-service profiles. Administrators can adjust this setting for each profile.
+
+Pulse composition can also be configured from the BrandPulse **Pulse** tab.
+Select a GLPI profile, enable up to six counters by default (adjustable up to ten)
+and set their order. Switching the active profile reloads the matching
+composition without merging the user's
+other profiles.
+
+Shared counters based on a saved search only accept public searches. Results are
+still filtered by the current technician's rights, active entities and recursive
+scope.
+
+Counters marked as required prepare the future hybrid mode: they will form the
+profile baseline that personal additions cannot hide. No user customisation UI is
+enabled in this release.
 
 ### Installation
 

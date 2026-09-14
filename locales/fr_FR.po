@@ -1,6 +1,6 @@
 msgid ""
 msgstr ""
-"Project-Id-Version: GLPI BrandPulse 0.1.3\n"
+"Project-Id-Version: GLPI BrandPulse 0.2.0\n"
 "Report-Msgid-Bugs-To: https://github.com/TiniSys-IT-Solutions/glpi-brandpulse/issues\n"
 "POT-Creation-Date: 2026-08-10 00:00+0000\n"
 "PO-Revision-Date: 2026-08-10 00:00+0000\n"
@@ -548,3 +548,85 @@ msgstr "Élément de liste"
 
 msgid "link label"
 msgstr "libellé du lien"
+
+msgid "Select a valid GLPI profile."
+msgstr "Sélectionnez un profil GLPI valide."
+
+#, php-format
+msgid "A profile can display at most %d Pulse counters."
+msgstr "Un profil peut afficher au maximum %d compteurs Pulse."
+
+msgid "Profile counters can only use public, available GLPI saved searches."
+msgstr "Les compteurs de profil peuvent uniquement utiliser des recherches sauvegardées GLPI publiques et disponibles."
+
+msgid "Pulse profile storage is unavailable."
+msgstr "Le stockage des configurations Pulse par profil est indisponible."
+
+msgid "Unable to save the Pulse profile configuration."
+msgstr "Impossible d'enregistrer la configuration Pulse du profil."
+
+msgid "Pulse profile composition"
+msgstr "Composition Pulse du profil"
+
+#, php-format
+msgid "This profile currently receives %d Pulse counters."
+msgstr "Ce profil reçoit actuellement %d compteurs Pulse."
+
+msgid "Configure counters for this profile"
+msgstr "Configurer les compteurs de ce profil"
+
+msgid "Profile assignment"
+msgstr "Affectation par profil"
+
+msgid "Choose the counters displayed when this GLPI profile is active."
+msgstr "Choisissez les compteurs affichés lorsque ce profil GLPI est actif."
+
+msgid "GLPI profile"
+msgstr "Profil GLPI"
+
+msgid "No GLPI profile is available."
+msgstr "Aucun profil GLPI n'est disponible."
+
+#, php-format
+msgid "Select up to %d counters. Required counters are reserved for the future personal-favourites mode and cannot later be hidden by users."
+msgstr "Sélectionnez jusqu'à %d compteurs. Les compteurs obligatoires sont réservés au futur mode de favoris personnels et ne pourront pas être masqués par les utilisateurs."
+
+msgid "Visible"
+msgstr "Visible"
+
+msgid "Counter"
+msgstr "Compteur"
+
+msgid "Required"
+msgstr "Obligatoire"
+
+msgid "Required profile counter"
+msgstr "Compteur obligatoire du profil"
+
+msgid "Header preview"
+msgstr "Aperçu du header"
+
+msgid "No counter is enabled for this profile."
+msgstr "Aucun compteur n'est activé pour ce profil."
+
+#, php-format
+msgid "%d counters currently displayed for this profile."
+msgstr "%d compteurs sont actuellement affichés pour ce profil."
+
+msgid "Save Pulse and profile"
+msgstr "Enregistrer Pulse et le profil"
+
+msgid "Counter catalog"
+msgstr "Catalogue des compteurs"
+
+msgid "Default"
+msgstr "Par défaut"
+
+msgid "Use public GLPI saved searches or presets. The default state is inherited by new profiles until their assignment is saved."
+msgstr "Utilisez des recherches sauvegardées GLPI publiques ou des préréglages. L’état par défaut est hérité par les nouveaux profils jusqu’à l’enregistrement de leur affectation."
+
+msgid "Use public GLPI saved searches or presets. The default state is inherited by new profiles until their assignment is saved. Save a new catalog counter before assigning it below."
+msgstr "Utilisez des recherches sauvegardées GLPI publiques ou des préréglages. L’état par défaut est hérité par les nouveaux profils jusqu’à l’enregistrement de leur affectation. Enregistrez un nouveau compteur du catalogue avant de l’affecter ci-dessous."
+
+msgid "Maximum counters per profile"
+msgstr "Nombre maximal de compteurs par profil"

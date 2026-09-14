@@ -1,0 +1,84 @@
+<?php
+
+declare(strict_types=1);
+
+namespace GlpiPlugin\Brandpulse\Tests;
+
+use GlpiPlugin\Brandpulse\Config;
+use PHPUnit\Framework\Attributes\CoversClass;
+use PHPUnit\Framework\TestCase;
+
+#[CoversClass(Config::class)]
+final class ConfigTest extends TestCase
+{
+    public function testProfileCounterLimitIsClampedBetweenSixAndTen(): void
+    {
+        self::assertSame(6, Config::normalizeMaxProfileCounters(2));
+        self::assertSame(8, Config::normalizeMaxProfileCounters(8));
+        self::assertSame(10, Config::normalizeMaxProfileCounters(20));
+    }
+
+    public function testBrandingIsNormalizedAndLegacyLogosRemainCompatible(): void
+    {
+        $branding = Config::normalizeBranding([
+            'enabled' => 1,
+            'title' => '  Service desk  ',
+            'menu_logo' => ' menu.svg ',
+            'login_logo' => ' login.svg ',
+            'login_alert_type' => 'unsupported',
+            'login_alert_icon' => 'https://example.test/icon.svg',
+        ]);
+
+        self::assertTrue($branding['enabled']);
+        self::assertSame('Service desk', $branding['title']);
+        self::assertSame('menu.svg', $branding['logo_sidebar_expanded_light']);
+        self::assertSame('login.svg', $branding['login_logo_light']);
+        self::assertSame('info', $branding['login_alert_type']);
+        self::assertSame(Config::DEFAULT_PULSE_ICON, $branding['login_alert_icon']);
+    }
+
+    public function testSavedSearchCounterGetsStableKeyAndSafeValues(): void
+    {
+        $counters = Config::normalizeCounters([[
+            'key' => 'ignored',
+            'label' => '  Tickets critiques  ',
+            'source_type' => 'saved_search',
+            'savedsearches_id' => 42,
+            'icon' => 'pulse:../secret.svg',
+            'color' => 'red',
+            'enabled' => 1,
+            'warning_threshold' => -5,
+            'critical_threshold' => 10,
+        ]]);
+
+        self::assertCount(1, $counters);
+        self::assertSame('saved_search_42', $counters[0]['key']);
+        self::assertSame('Tickets critiques', $counters[0]['label']);
+        self::assertSame(Config::DEFAULT_PULSE_ICON, $counters[0]['icon']);
+        self::assertSame('#3b82f6', $counters[0]['color']);
+        self::assertSame(0, $counters[0]['warning_threshold']);
+        self::assertSame(10, $counters[0]['critical_threshold']);
+    }
+
+    public function testInvalidAndIncompleteCountersAreDiscarded(): void
+    {
+        $counters = Config::normalizeCounters([
+            ['key' => 'unknown_preset', 'label' => 'Unknown', 'source_type' => 'preset'],
+            ['key' => '', 'label' => '', 'source_type' => 'preset'],
+            ['key' => 'saved', 'label' => 'Missing search', 'source_type' => 'saved_search'],
+        ]);
+
+        self::assertSame([], $counters);
+    }
+
+    public function testBundledPulseIconIsAccepted(): void
+    {
+        $counter = Config::normalizeCounters([[
+            'key' => 'my_tasks',
+            'label' => 'Tasks',
+            'icon' => 'pulse:List/Checklist Minimalistic',
+        ]])[0];
+
+        self::assertSame('pulse:List/Checklist Minimalistic.svg', $counter['icon']);
+    }
+}

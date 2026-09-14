@@ -606,6 +606,119 @@
     refreshPulseOrderControls();
   };
 
+  const profileCounterRows = () => [...document.querySelectorAll('[data-profile-counter-rows] > [data-profile-counter-row]')];
+
+  const syncProfileCounterRows = () => {
+    const rows = profileCounterRows();
+    rows.forEach((row, index) => {
+      for (const field of row.querySelectorAll('[name^="profile_counters["]')) {
+        field.name = field.name.replace(/profile_counters\[[^\]]+\]/, 'profile_counters[' + String(index) + ']');
+      }
+
+      const active = row.querySelector('[name$="[is_active]"]');
+      const mandatory = row.querySelector('[name$="[is_mandatory]"]');
+      if (mandatory) {
+        mandatory.disabled = !active?.checked;
+        if (!active?.checked) {
+          mandatory.checked = false;
+        }
+      }
+
+      const up = row.querySelector('[data-profile-counter-move="up"]');
+      const down = row.querySelector('[data-profile-counter-move="down"]');
+      if (up) up.disabled = index === 0;
+      if (down) down.disabled = index === rows.length - 1;
+    });
+
+    const preview = document.querySelector('[data-profile-counter-preview]');
+    const configuredLimit = Number(document.querySelector('[data-profile-counter-limit]')?.value || 6);
+    const activeRows = rows
+      .filter((row) => row.querySelector('[name$="[is_active]"]')?.checked)
+      .slice(0, Math.max(6, Math.min(10, configuredLimit)));
+    if (preview) {
+      preview.replaceChildren();
+      if (activeRows.length === 0) {
+        const empty = document.createElement('span');
+        empty.className = 'text-muted';
+        empty.textContent = t('No counter is enabled for this profile.');
+        preview.append(empty);
+      } else {
+        for (const row of activeRows) {
+          const item = document.createElement('span');
+          item.className = 'brandpulse-profile-preview-counter';
+
+          const icon = document.createElement('span');
+          icon.className = 'brandpulse-icon-preview';
+          icon.setAttribute('aria-hidden', 'true');
+          icon.style.webkitMaskImage = 'url("' + String(row.dataset.counterIconUrl || '') + '")';
+          icon.style.maskImage = 'url("' + String(row.dataset.counterIconUrl || '') + '")';
+          item.append(icon, document.createTextNode(String(row.dataset.counterLabel || '')));
+
+          if (row.querySelector('[name$="[is_mandatory]"]')?.checked) {
+            const lock = document.createElement('i');
+            lock.className = 'ti ti-lock';
+            lock.setAttribute('aria-label', t('Required'));
+            item.append(lock);
+          }
+          preview.append(item);
+        }
+      }
+    }
+
+    const countLabel = document.querySelector('[data-profile-counter-count]');
+    if (countLabel) {
+      countLabel.textContent = String(countLabel.dataset.countTemplate || '%d').replace('%d', String(activeRows.length));
+    }
+  };
+
+  const setupProfileCounterControls = () => {
+    const rowsContainer = document.querySelector('[data-profile-counter-rows]');
+    if (!rowsContainer) {
+      return;
+    }
+
+    rowsContainer.addEventListener('click', (event) => {
+      const button = event.target.closest('[data-profile-counter-move]');
+      const row = button?.closest('[data-profile-counter-row]');
+      if (!button || !row) {
+        return;
+      }
+
+      if (button.dataset.profileCounterMove === 'up' && row.previousElementSibling) {
+        row.parentNode.insertBefore(row, row.previousElementSibling);
+      } else if (button.dataset.profileCounterMove === 'down' && row.nextElementSibling) {
+        row.parentNode.insertBefore(row.nextElementSibling, row);
+      }
+      syncProfileCounterRows();
+    });
+
+    rowsContainer.addEventListener('change', (event) => {
+      if (event.target.matches('[name$="[is_active]"], [name$="[is_mandatory]"]')) {
+        syncProfileCounterRows();
+      }
+    });
+
+    const profileSelect = document.querySelector('[data-pulse-profile-select]');
+    profileSelect?.addEventListener('change', () => {
+      const baseUrl = profileSelect.dataset.baseUrl || window.location.pathname;
+      window.location.assign(baseUrl + '&profile_id=' + encodeURIComponent(profileSelect.value));
+    });
+
+    syncProfileCounterRows();
+  };
+
+  const setupProfileCounterLimit = () => {
+    const input = document.querySelector('[data-profile-counter-limit]');
+    const output = document.querySelector('[data-profile-counter-limit-value]');
+    if (!input || !output) return;
+    const sync = () => {
+      output.textContent = String(input.value);
+      syncProfileCounterRows();
+    };
+    input.addEventListener('input', sync);
+    sync();
+  };
+
   let iconIndexPromise = null;
   let activeIconField = null;
   let iconPage = 0;
@@ -965,6 +1078,8 @@
 
     setupPulseTargets();
     setupPulseTableControls();
+    setupProfileCounterControls();
+    setupProfileCounterLimit();
     setupIconPickerModal();
     setupBrandingCacheInvalidation();
     setupAlertFormattingToolbar();

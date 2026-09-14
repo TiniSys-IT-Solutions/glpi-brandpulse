@@ -1,5 +1,19 @@
 # Development history
 
+## 0.2.0 — profile-targeted Pulse
+
+- Added ordered counter assignments for each GLPI profile.
+- Kept the existing global catalogue as the migration-safe source of counter
+  definitions.
+- Added a normalized profile-assignment table with active, position and mandatory
+  state.
+- Prepared a bounded hybrid resolver for future user-owned saved-search additions
+  linked to the active profile.
+- Strengthened saved-search visibility checks and avoided calculating counters
+  that are not assigned to the active profile.
+- Kept six counters as the default profile limit and added an administrator
+  slider allowing a controlled increase up to ten.
+
 This document preserves the detailed pre-public development history. These
 entries describe internal iterations and do not represent the current public
 release sequence.

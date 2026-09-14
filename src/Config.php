@@ -55,6 +55,9 @@ final class Config
         $values['enabled'] = (bool) (int) $values['enabled'];
         $values['compact_search_enabled'] = (bool) (int) $values['compact_search_enabled'];
         $values['refresh_interval'] = max(15, (int) $values['refresh_interval']);
+        $values['max_profile_counters'] = self::normalizeMaxProfileCounters(
+            (int) $values['max_profile_counters']
+        );
         $values['branding'] = self::normalizeBranding(
             self::decodeJson($values['branding_json'], self::defaultBranding())
         );
@@ -97,13 +100,15 @@ final class Config
         bool $enabled,
         int $refreshInterval,
         bool $compactSearchEnabled,
-        array $counters
+        array $counters,
+        int $maxProfileCounters = PulseResolver::DEFAULT_MAX_PROFILE_COUNTERS
     ): void
     {
         self::save([
             'enabled' => $enabled ? '1' : '0',
             'refresh_interval' => (string) max(15, $refreshInterval),
             'compact_search_enabled' => $compactSearchEnabled ? '1' : '0',
+            'max_profile_counters' => (string) self::normalizeMaxProfileCounters($maxProfileCounters),
             'counters_json' => self::encodeJson(self::normalizeCounters($counters)),
         ]);
     }
@@ -120,6 +125,7 @@ final class Config
         return [
             'enabled' => '1',
             'refresh_interval' => '60',
+            'max_profile_counters' => (string) PulseResolver::DEFAULT_MAX_PROFILE_COUNTERS,
             'compact_search_enabled' => '0',
             'pulse_interface' => 'central',
             'branding_json' => self::encodeJson(self::defaultBranding()),
@@ -215,6 +221,14 @@ final class Config
         ];
     }
 
+    public static function normalizeMaxProfileCounters(int $maximum): int
+    {
+        return max(
+            PulseResolver::MIN_PROFILE_COUNTERS,
+            min(PulseResolver::MAX_PROFILE_COUNTERS, $maximum)
+        );
+    }
+
     public static function pulseIcons(): array
     {
         $manifestPath = __DIR__ . '/../public/icons/pulse/index.json';
@@ -294,6 +308,7 @@ final class Config
     public static function normalizeCounters(array $counters): array
     {
         $normalized = [];
+        $seen = [];
 
         foreach ($counters as $counter) {
             if (!is_array($counter)) {
@@ -328,6 +343,11 @@ final class Config
 
                 $key = 'saved_search_' . $savedSearchId;
             }
+
+            if (isset($seen[$key])) {
+                continue;
+            }
+            $seen[$key] = true;
 
             $normalized[] = [
                 'key' => $key,
