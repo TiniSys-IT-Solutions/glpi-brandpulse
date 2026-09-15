@@ -1,6 +1,6 @@
 msgid ""
 msgstr ""
-"Project-Id-Version: GLPI BrandPulse 0.2.0\n"
+"Project-Id-Version: GLPI BrandPulse 0.2.2\n"
 "Report-Msgid-Bugs-To: https://github.com/TiniSys-IT-Solutions/glpi-brandpulse/issues\n"
 "POT-Creation-Date: 2026-08-10 00:00+0000\n"
 "PO-Revision-Date: 2026-08-10 00:00+0000\n"
@@ -630,3 +630,44 @@ msgstr "Use public GLPI saved searches or presets. The default state is inherite
 
 msgid "Maximum counters per profile"
 msgstr "Maximum counters per profile"
+
+msgid "Pulse display mode"
+msgstr "Pulse display mode"
+
+msgid "Global Pulse"
+msgstr "Global Pulse"
+
+msgid "Use one counter composition for every authorized profile."
+msgstr "Use one counter composition for every authorized profile."
+
+msgid "Pulse by profile"
+msgstr "Pulse by profile"
+
+msgid "Choose a separate counter composition for each active GLPI profile."
+msgstr "Choose a separate counter composition for each active GLPI profile."
+
+msgid "Also display Global Pulse for authorized self-service profiles"
+msgstr "Also display Global Pulse for authorized self-service profiles"
+
+msgid "Visible for this profile"
+msgstr "Visible for this profile"
+
+#, php-format
+msgid "Select up to %d counters for the selected profile."
+msgstr "Select up to %d counters for the selected profile."
+
+msgid "This composition is shared by every profile authorized to display Pulse."
+msgstr "This composition is shared by every profile authorized to display Pulse."
+
+#, php-format
+msgid "Pulse can display at most %d counters in the selected mode."
+msgstr "Pulse can display at most %d counters in the selected mode."
+
+msgid "Maximum counters displayed"
+msgstr "Maximum counters displayed"
+
+msgid "Save these settings to apply the selected Pulse mode."
+msgstr "Save these settings to apply the selected Pulse mode."
+
+msgid "Save default settings"
+msgstr "Save default settings"

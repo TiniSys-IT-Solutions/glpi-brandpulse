@@ -5,7 +5,7 @@ All notable public changes to GLPI BrandPulse are documented here.
 Detailed pre-public iterations remain available in
 [docs/DEVELOPMENT_HISTORY.md](docs/DEVELOPMENT_HISTORY.md).
 
-## [0.2.0] - 2026-09-14
+## [0.2.2] - 2026-09-15
 
 ### Added
 
@@ -19,6 +19,10 @@ Detailed pre-public iterations remain available in
 
 ### Changed
 
+- Replace the separate profile-assignment panel with one adaptive counter
+  catalogue for mutually exclusive Global Pulse and Pulse-by-profile modes.
+- Add an explicit option controlling Global Pulse in the self-service interface
+  while preserving the existing profile right as the security master switch.
 - Repair and validate the GitHub Actions quality workflow.
 - Make development dependency installation reproducible with a committed
   Composer lock file while keeping development-only files out of releases.

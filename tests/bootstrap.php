@@ -62,10 +62,16 @@ if (!class_exists('Session')) {
     class Session
     {
         public static bool $brandpulseRight = true;
+        public static string $interface = 'central';
 
         public static function haveRight(string $right, int $level): bool
         {
             return self::$brandpulseRight;
+        }
+
+        public static function getCurrentInterface(): string
+        {
+            return self::$interface;
         }
     }
 }

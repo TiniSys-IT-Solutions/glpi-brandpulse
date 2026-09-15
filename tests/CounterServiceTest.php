@@ -22,6 +22,7 @@ final class CounterServiceTest extends TestCase
         unset($GLOBALS['DB']);
         \Config::$values = [];
         Session::$brandpulseRight = true;
+        Session::$interface = 'central';
     }
 
     public function testGlobalProfileRightStopsPulseBeforeAnyCounterResolution(): void
@@ -40,6 +41,7 @@ final class CounterServiceTest extends TestCase
         $catalog = array_slice(Config::defaultCounters(), 0, 2);
         \Config::$values[Config::CONTEXT] = [
             'counters_json' => json_encode($catalog, JSON_THROW_ON_ERROR),
+            'pulse_mode' => 'profile',
         ];
         $database = new ActiveProfileFakeDatabase([
             ['profiles_id' => 4, 'counter_key' => $catalog[0]['key'], 'position' => 0, 'is_active' => 1, 'is_mandatory' => 0],
@@ -54,6 +56,27 @@ final class CounterServiceTest extends TestCase
 
         self::assertSame([$catalog[0]['key']], array_column($profileFour['counters'], 'key'));
         self::assertSame([$catalog[1]['key']], array_column($profileFive['counters'], 'key'));
+    }
+
+    public function testGlobalModeUsesOneCompositionAndCanExcludeSelfService(): void
+    {
+        $catalog = array_slice(Config::defaultCounters(), 0, 2);
+        \Config::$values[Config::CONTEXT] = [
+            'counters_json' => json_encode($catalog, JSON_THROW_ON_ERROR),
+            'pulse_mode' => 'global',
+            'global_selfservice_enabled' => '0',
+        ];
+        $_SESSION['glpiactiveprofile']['id'] = 4;
+
+        $central = (new CounterService(10))->getPayload();
+        Session::$interface = 'helpdesk';
+        $selfservice = (new CounterService(10))->getPayload();
+        \Config::$values[Config::CONTEXT]['global_selfservice_enabled'] = '1';
+        $allowedSelfservice = (new CounterService(10))->getPayload();
+
+        self::assertSame(array_column($catalog, 'key'), array_column($central['counters'], 'key'));
+        self::assertFalse($selfservice['enabled']);
+        self::assertSame(array_column($catalog, 'key'), array_column($allowedSelfservice['counters'], 'key'));
     }
 
     public function testCacheKeyIsStableForAnIdenticalContext(): void

@@ -23,7 +23,18 @@ final class CounterService
         $config = Config::values();
         $profileId = (int) ($_SESSION['glpiactiveprofile']['id'] ?? 0);
 
-        if (!$config['enabled'] || !Profile::canViewGeneralPulse() || $this->userId <= 0 || $profileId <= 0) {
+        $selfserviceBlocked = $config['pulse_mode'] === 'global'
+            && !$config['global_selfservice_enabled']
+            && method_exists(\Session::class, 'getCurrentInterface')
+            && \Session::getCurrentInterface() === 'helpdesk';
+
+        if (
+            !$config['enabled']
+            || !Profile::canViewGeneralPulse()
+            || $this->userId <= 0
+            || $profileId <= 0
+            || $selfserviceBlocked
+        ) {
             return [
                 'enabled' => false,
                 'refresh_interval' => $config['refresh_interval'],
@@ -36,9 +47,14 @@ final class CounterService
             'enabled' => true,
             'refresh_interval' => $config['refresh_interval'],
             'compact_search_enabled' => $config['compact_search_enabled'],
-            'counters' => $this->getCounters(
-                ProfileCounterStore::resolvedForProfile($profileId, $config['counters'])
-            ),
+            'counters' => $this->getCounters($config['pulse_mode'] === 'profile'
+                ? ProfileCounterStore::resolvedForProfile($profileId, $config['counters'])
+                : PulseResolver::resolve(
+                    $config['counters'],
+                    PulseResolver::defaultAssignments($config['counters']),
+                    [],
+                    $config['max_profile_counters']
+                )),
         ];
     }
 

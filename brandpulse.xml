@@ -27,9 +27,9 @@
   </tags>
   <versions>
     <version>
-      <num>0.2.0</num>
+      <num>0.2.2</num>
       <compatibility>^11.0</compatibility>
-      <download_url>https://github.com/TiniSys-IT-Solutions/glpi-brandpulse/releases/download/v0.2.0/glpi-brandpulse-0.2.0.zip</download_url>
+      <download_url>https://github.com/TiniSys-IT-Solutions/glpi-brandpulse/releases/download/v0.2.2/glpi-brandpulse-0.2.2.zip</download_url>
     </version>
   </versions>
 </root>

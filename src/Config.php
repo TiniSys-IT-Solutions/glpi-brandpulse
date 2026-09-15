@@ -54,6 +54,10 @@ final class Config
 
         $values['enabled'] = (bool) (int) $values['enabled'];
         $values['compact_search_enabled'] = (bool) (int) $values['compact_search_enabled'];
+        $values['pulse_mode'] = in_array($values['pulse_mode'], ['global', 'profile'], true)
+            ? $values['pulse_mode']
+            : 'global';
+        $values['global_selfservice_enabled'] = (bool) (int) $values['global_selfservice_enabled'];
         $values['refresh_interval'] = max(15, (int) $values['refresh_interval']);
         $values['max_profile_counters'] = self::normalizeMaxProfileCounters(
             (int) $values['max_profile_counters']
@@ -101,7 +105,9 @@ final class Config
         int $refreshInterval,
         bool $compactSearchEnabled,
         array $counters,
-        int $maxProfileCounters = PulseResolver::DEFAULT_MAX_PROFILE_COUNTERS
+        int $maxProfileCounters = PulseResolver::DEFAULT_MAX_PROFILE_COUNTERS,
+        string $pulseMode = 'global',
+        bool $globalSelfserviceEnabled = false
     ): void
     {
         self::save([
@@ -109,6 +115,8 @@ final class Config
             'refresh_interval' => (string) max(15, $refreshInterval),
             'compact_search_enabled' => $compactSearchEnabled ? '1' : '0',
             'max_profile_counters' => (string) self::normalizeMaxProfileCounters($maxProfileCounters),
+            'pulse_mode' => in_array($pulseMode, ['global', 'profile'], true) ? $pulseMode : 'global',
+            'global_selfservice_enabled' => $globalSelfserviceEnabled ? '1' : '0',
             'counters_json' => self::encodeJson(self::normalizeCounters($counters)),
         ]);
     }
@@ -126,6 +134,8 @@ final class Config
             'enabled' => '1',
             'refresh_interval' => '60',
             'max_profile_counters' => (string) PulseResolver::DEFAULT_MAX_PROFILE_COUNTERS,
+            'pulse_mode' => 'global',
+            'global_selfservice_enabled' => '0',
             'compact_search_enabled' => '0',
             'pulse_interface' => 'central',
             'branding_json' => self::encodeJson(self::defaultBranding()),

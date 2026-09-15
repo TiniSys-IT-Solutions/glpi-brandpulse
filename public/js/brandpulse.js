@@ -544,6 +544,7 @@
         down.disabled = index === count - 1;
       }
     });
+    syncProfileCounterRows();
   };
 
   const nextPulseRowIndex = () => {
@@ -606,17 +607,13 @@
     refreshPulseOrderControls();
   };
 
-  const profileCounterRows = () => [...document.querySelectorAll('[data-profile-counter-rows] > [data-profile-counter-row]')];
+  const profileCounterRows = () => pulseRows();
 
   const syncProfileCounterRows = () => {
     const rows = profileCounterRows();
     rows.forEach((row, index) => {
-      for (const field of row.querySelectorAll('[name^="profile_counters["]')) {
-        field.name = field.name.replace(/profile_counters\[[^\]]+\]/, 'profile_counters[' + String(index) + ']');
-      }
-
-      const active = row.querySelector('[name$="[is_active]"]');
-      const mandatory = row.querySelector('[name$="[is_mandatory]"]');
+      const active = row.querySelector('[data-profile-active], [data-global-active]');
+      const mandatory = row.querySelector('[data-profile-mandatory]');
       if (mandatory) {
         mandatory.disabled = !active?.checked;
         if (!active?.checked) {
@@ -624,16 +621,12 @@
         }
       }
 
-      const up = row.querySelector('[data-profile-counter-move="up"]');
-      const down = row.querySelector('[data-profile-counter-move="down"]');
-      if (up) up.disabled = index === 0;
-      if (down) down.disabled = index === rows.length - 1;
     });
 
     const preview = document.querySelector('[data-profile-counter-preview]');
     const configuredLimit = Number(document.querySelector('[data-profile-counter-limit]')?.value || 6);
     const activeRows = rows
-      .filter((row) => row.querySelector('[name$="[is_active]"]')?.checked)
+      .filter((row) => row.querySelector('[data-profile-active], [data-global-active]')?.checked)
       .slice(0, Math.max(6, Math.min(10, configuredLimit)));
     if (preview) {
       preview.replaceChildren();
@@ -654,7 +647,7 @@
           icon.style.maskImage = 'url("' + String(row.dataset.counterIconUrl || '') + '")';
           item.append(icon, document.createTextNode(String(row.dataset.counterLabel || '')));
 
-          if (row.querySelector('[name$="[is_mandatory]"]')?.checked) {
+          if (row.querySelector('[data-profile-mandatory]')?.checked) {
             const lock = document.createElement('i');
             lock.className = 'ti ti-lock';
             lock.setAttribute('aria-label', t('Required'));
@@ -665,35 +658,12 @@
       }
     }
 
-    const countLabel = document.querySelector('[data-profile-counter-count]');
-    if (countLabel) {
-      countLabel.textContent = String(countLabel.dataset.countTemplate || '%d').replace('%d', String(activeRows.length));
-    }
   };
 
   const setupProfileCounterControls = () => {
-    const rowsContainer = document.querySelector('[data-profile-counter-rows]');
-    if (!rowsContainer) {
-      return;
-    }
-
-    rowsContainer.addEventListener('click', (event) => {
-      const button = event.target.closest('[data-profile-counter-move]');
-      const row = button?.closest('[data-profile-counter-row]');
-      if (!button || !row) {
-        return;
-      }
-
-      if (button.dataset.profileCounterMove === 'up' && row.previousElementSibling) {
-        row.parentNode.insertBefore(row, row.previousElementSibling);
-      } else if (button.dataset.profileCounterMove === 'down' && row.nextElementSibling) {
-        row.parentNode.insertBefore(row.nextElementSibling, row);
-      }
-      syncProfileCounterRows();
-    });
-
-    rowsContainer.addEventListener('change', (event) => {
-      if (event.target.matches('[name$="[is_active]"], [name$="[is_mandatory]"]')) {
+    const table = document.querySelector('[data-pulse-table]');
+    table?.addEventListener('change', (event) => {
+      if (event.target.matches('[data-profile-active], [data-global-active], [data-profile-mandatory]')) {
         syncProfileCounterRows();
       }
     });
@@ -705,6 +675,18 @@
     });
 
     syncProfileCounterRows();
+  };
+
+  const setupPulseModeControls = () => {
+    const choices = [...document.querySelectorAll('[data-pulse-mode]')];
+    const selfservice = document.querySelector('[data-global-selfservice]');
+    if (choices.length === 0 || !selfservice) return;
+    const sync = () => {
+      const mode = choices.find((choice) => choice.checked)?.value || 'global';
+      selfservice.classList.toggle('d-none', mode !== 'global');
+    };
+    choices.forEach((choice) => choice.addEventListener('change', sync));
+    sync();
   };
 
   const setupProfileCounterLimit = () => {
@@ -1080,6 +1062,7 @@
     setupPulseTableControls();
     setupProfileCounterControls();
     setupProfileCounterLimit();
+    setupPulseModeControls();
     setupIconPickerModal();
     setupBrandingCacheInvalidation();
     setupAlertFormattingToolbar();

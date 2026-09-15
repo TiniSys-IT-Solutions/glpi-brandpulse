@@ -141,8 +141,16 @@ final class Profile extends \Profile
         }
         echo '</div>';
 
-        $catalog = Config::values()['counters'];
-        $counterCount = count(ProfileCounterStore::resolvedForProfile($profileId, $catalog));
+        $pulseConfig = Config::values();
+        $catalog = $pulseConfig['counters'];
+        $counterCount = count($pulseConfig['pulse_mode'] === 'profile'
+            ? ProfileCounterStore::resolvedForProfile($profileId, $catalog)
+            : PulseResolver::resolve(
+                $catalog,
+                PulseResolver::defaultAssignments($catalog),
+                [],
+                $pulseConfig['max_profile_counters']
+            ));
         global $CFG_GLPI;
         $configUrl = rtrim((string) ($CFG_GLPI['root_doc'] ?? ''), '/')
             . '/plugins/brandpulse/front/config.php?tab=pulse&profile_id=' . $profileId;

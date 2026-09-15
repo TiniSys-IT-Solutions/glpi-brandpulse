@@ -11,11 +11,23 @@ use PHPUnit\Framework\TestCase;
 #[CoversClass(Config::class)]
 final class ConfigTest extends TestCase
 {
+    protected function tearDown(): void
+    {
+        \Config::$values = [];
+    }
+
     public function testProfileCounterLimitIsClampedBetweenSixAndTen(): void
     {
         self::assertSame(6, Config::normalizeMaxProfileCounters(2));
         self::assertSame(8, Config::normalizeMaxProfileCounters(8));
         self::assertSame(10, Config::normalizeMaxProfileCounters(20));
+    }
+
+    public function testPulseModeDefaultsToGlobalAndNormalizesInvalidValues(): void
+    {
+        self::assertSame('global', Config::values()['pulse_mode']);
+        \Config::$values[Config::CONTEXT] = ['pulse_mode' => 'invalid'];
+        self::assertSame('global', Config::values()['pulse_mode']);
     }
 
     public function testBrandingIsNormalizedAndLegacyLogosRemainCompatible(): void

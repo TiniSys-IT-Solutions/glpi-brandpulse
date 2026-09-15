@@ -452,16 +452,36 @@ function plugin_brandpulse_pulse_row(
     array $presetCounters,
     array $savedSearches,
     array $icons,
-    array $sourceTypes
+    array $sourceTypes,
+    string $pulseMode = 'global',
+    ?array $assignment = null
 ): string {
     $sourceType = (string) ($counter['source_type'] ?? 'preset');
     $savedSearchId = (int) ($counter['savedsearches_id'] ?? 0);
     $presetKey = array_key_exists((string) ($counter['key'] ?? ''), $presetCounters) ? (string) $counter['key'] : 'my_tasks';
     $iconValue = (string) ($counter['icon'] ?? BrandpulseConfig::DEFAULT_PULSE_ICON);
 
-    $html = "<tr data-pulse-row>";
-    $html .= "<td><input class='form-check-input' type='checkbox' name='counters[{$index}][enabled]' value='1'" . (!empty($counter['enabled']) ? ' checked' : '') . '></td>';
-    $html .= '<td>' . plugin_brandpulse_text_input("counters[{$index}][label]", (string) ($counter['label'] ?? ''), 'text', 'form-control form-control-sm') . plugin_brandpulse_text_input("counters[{$index}][key]", (string) ($counter['key'] ?? ''), 'hidden') . '</td>';
+    $profileActive = !empty($assignment['is_active']);
+    $mandatory = !empty($assignment['is_mandatory']) && $profileActive;
+    $iconPath = str_starts_with($iconValue, 'pulse:')
+        ? substr($iconValue, 6)
+        : substr(BrandpulseConfig::DEFAULT_PULSE_ICON, 6);
+    $iconUrl = plugin_brandpulse_web_base() . '/ajax/icon.php?file=' . rawurlencode($iconPath);
+
+    $html = "<tr data-pulse-row data-counter-label='" . plugin_brandpulse_h((string) ($counter['label'] ?? ''))
+        . "' data-counter-icon-url='" . plugin_brandpulse_h($iconUrl) . "'>";
+    if ($pulseMode === 'profile') {
+        $html .= '<td>';
+        if (!empty($counter['enabled'])) {
+            $html .= plugin_brandpulse_text_input("counters[{$index}][enabled]", '1', 'hidden');
+        }
+        $html .= "<input class='form-check-input' type='checkbox' name='counters[{$index}][profile_active]' value='1' data-profile-active"
+            . ($profileActive ? ' checked' : '') . '></td>';
+    } else {
+        $html .= "<td><input class='form-check-input' type='checkbox' name='counters[{$index}][enabled]' value='1' data-global-active"
+            . (!empty($counter['enabled']) ? ' checked' : '') . '></td>';
+    }
+    $html .= '<td>' . plugin_brandpulse_text_input("counters[{$index}][catalog_position]", (string) ($counter['_catalog_position'] ?? $index), 'hidden') . plugin_brandpulse_text_input("counters[{$index}][label]", (string) ($counter['label'] ?? ''), 'text', 'form-control form-control-sm') . plugin_brandpulse_text_input("counters[{$index}][key]", (string) ($counter['key'] ?? ''), 'hidden') . '</td>';
     $html .= '<td>' . str_replace('<select ', '<select data-pulse-source ', plugin_brandpulse_select("counters[{$index}][source_type]", $sourceTypes, $sourceType)) . '</td>';
     $html .= "<td class='brandpulse-target-cell'>";
     $html .= "<div data-pulse-target='preset'>" . plugin_brandpulse_select("counters[{$index}][preset_key]", $presetCounters, $presetKey) . '</div>';
@@ -471,6 +491,11 @@ function plugin_brandpulse_pulse_row(
     $html .= "<td><input class='form-control form-control-sm form-control-color' type='color' name='counters[{$index}][color]' value='" . plugin_brandpulse_h((string) ($counter['color'] ?? '#3b82f6')) . "'></td>";
     $html .= "<td><input class='form-control form-control-sm' type='number' min='0' name='counters[{$index}][warning_threshold]' value='" . (int) ($counter['warning_threshold'] ?? 0) . "'></td>";
     $html .= "<td><input class='form-control form-control-sm' type='number' min='0' name='counters[{$index}][critical_threshold]' value='" . (int) ($counter['critical_threshold'] ?? 0) . "'></td>";
+    if ($pulseMode === 'profile') {
+        $html .= "<td><input class='form-check-input' type='checkbox' name='counters[{$index}][profile_mandatory]' value='1' data-profile-mandatory"
+            . ($mandatory ? ' checked' : '') . ($profileActive ? '' : ' disabled')
+            . " aria-label='" . __s('Required profile counter', 'brandpulse') . "'></td>";
+    }
     $html .= "<td class='brandpulse-order-cell'><div class='btn-group btn-group-sm' role='group' aria-label='" . __s('Order', 'brandpulse') . "'>";
     $html .= "<button class='btn btn-outline-secondary' type='button' data-pulse-move='up' title='" . __s('Move up', 'brandpulse') . "' aria-label='" . __s('Move up', 'brandpulse') . "'>&uarr;</button>";
     $html .= "<button class='btn btn-outline-secondary' type='button' data-pulse-move='down' title='" . __s('Move down', 'brandpulse') . "' aria-label='" . __s('Move down', 'brandpulse') . "'>&darr;</button>";
@@ -628,8 +653,12 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     if ($tab === 'pulse') {
         $postedCounters = is_array($_POST['counters'] ?? null) ? $_POST['counters'] : [];
         $counters = [];
+        $submittedAssignments = [];
+        $pulseMode = (string) ($_POST['pulse_mode'] ?? 'global');
+        $pulseMode = in_array($pulseMode, ['global', 'profile'], true) ? $pulseMode : 'global';
+        $renderedPulseMode = (string) ($_POST['rendered_pulse_mode'] ?? $pulseMode);
 
-        foreach ($postedCounters as $row) {
+        foreach ($postedCounters as $position => $row) {
             if (!is_array($row)) {
                 continue;
             }
@@ -651,13 +680,20 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 'savedsearches_id' => $savedSearchId,
                 'warning_threshold' => (int) ($row['warning_threshold'] ?? 0),
                 'critical_threshold' => (int) ($row['critical_threshold'] ?? 0),
+                '_catalog_position' => (int) ($row['catalog_position'] ?? $position),
+            ];
+            $submittedAssignments[] = [
+                'counter_key' => $key,
+                'is_active' => isset($row['profile_active']),
+                'is_mandatory' => isset($row['profile_mandatory']),
             ];
         }
 
+        if ($pulseMode === 'profile') {
+            usort($counters, static fn (array $left, array $right): int =>
+                $left['_catalog_position'] <=> $right['_catalog_position']);
+        }
         $normalizedCounters = BrandpulseConfig::normalizeCounters($counters);
-        $submittedAssignments = is_array($_POST['profile_counters'] ?? null)
-            ? $_POST['profile_counters']
-            : [];
         $normalizedAssignments = ProfileCounterStore::normalizeSubmittedAssignments(
             $submittedAssignments,
             $normalizedCounters
@@ -667,15 +703,21 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             static fn (array $assignment): bool => $assignment['is_active']
         ));
 
-        if ($selectedProfileId <= 0) {
+        if ($pulseMode === 'profile' && $selectedProfileId <= 0) {
             $errors[] = __('Select a valid GLPI profile.', 'brandpulse');
         }
         $maxProfileCounters = BrandpulseConfig::normalizeMaxProfileCounters(
             (int) ($_POST['max_profile_counters'] ?? PulseResolver::DEFAULT_MAX_PROFILE_COUNTERS)
         );
-        if ($activeAssignmentCount > $maxProfileCounters) {
+        $activeCounterCount = $pulseMode === 'profile'
+            ? $activeAssignmentCount
+            : count(array_filter(
+                $normalizedCounters,
+                static fn (array $counter): bool => $counter['enabled']
+            ));
+        if ($activeCounterCount > $maxProfileCounters) {
             $errors[] = sprintf(
-                __('A profile can display at most %d Pulse counters.', 'brandpulse'),
+                __('Pulse can display at most %d counters in the selected mode.', 'brandpulse'),
                 $maxProfileCounters
             );
         }
@@ -685,22 +727,30 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
         if ($errors === []) {
             try {
-                ProfileCounterStore::saveProfile(
-                    $selectedProfileId,
-                    $normalizedAssignments,
-                    $normalizedCounters,
-                    $maxProfileCounters
-                );
+                if ($pulseMode === 'profile' && $renderedPulseMode === 'profile') {
+                    ProfileCounterStore::saveProfile(
+                        $selectedProfileId,
+                        $normalizedAssignments,
+                        $normalizedCounters,
+                        $maxProfileCounters
+                    );
+                }
                 BrandpulseConfig::savePulse(
                     isset($_POST['enabled']),
                     (int) ($_POST['refresh_interval'] ?? 60),
                     isset($_POST['compact_search_enabled']),
                     $normalizedCounters,
-                    $maxProfileCounters
+                    $maxProfileCounters,
+                    $pulseMode,
+                    isset($_POST['global_selfservice_enabled'])
                 );
 
                 Session::addMessageAfterRedirect(__('Pulse settings updated.', 'brandpulse'));
-                Html::redirect(plugin_brandpulse_config_url('pulse') . '&profile_id=' . $selectedProfileId);
+                $redirect = plugin_brandpulse_config_url('pulse');
+                if ($pulseMode === 'profile') {
+                    $redirect .= '&profile_id=' . $selectedProfileId;
+                }
+                Html::redirect($redirect);
             } catch (RuntimeException $exception) {
                 $errors[] = __($exception->getMessage(), 'brandpulse');
             }
@@ -721,6 +771,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && $tab === 'pulse' && $errors !== [] 
         (int) ($_POST['max_profile_counters'] ?? PulseResolver::DEFAULT_MAX_PROFILE_COUNTERS)
     );
     $config['compact_search_enabled'] = isset($_POST['compact_search_enabled']);
+    $config['pulse_mode'] = $pulseMode;
+    $config['global_selfservice_enabled'] = isset($_POST['global_selfservice_enabled']);
     $counters = $normalizedCounters;
 }
 $profileAssignments = isset($normalizedAssignments) && $errors !== []
@@ -729,16 +781,21 @@ $profileAssignments = isset($normalizedAssignments) && $errors !== []
         ProfileCounterStore::assignmentsForProfile($selectedProfileId, $counters),
         $counters
     );
-$profileDefinitions = [];
-foreach ($counters as $definition) {
-    $profileDefinitions[(string) ($definition['key'] ?? '')] = $definition;
+$assignmentsByKey = [];
+foreach ($profileAssignments as $assignment) {
+    $assignmentsByKey[(string) $assignment['counter_key']] = $assignment;
 }
-$resolvedProfileCounters = PulseResolver::resolve(
-    $counters,
-    $profileAssignments,
-    [],
-    $config['max_profile_counters']
-);
+$displayCounters = array_map(static function (array $counter, int $position): array {
+    $counter['_catalog_position'] = $position;
+    return $counter;
+}, $counters, array_keys($counters));
+if ($config['pulse_mode'] === 'profile') {
+    usort($displayCounters, static function (array $left, array $right) use ($assignmentsByKey): int {
+        $leftPosition = (int) ($assignmentsByKey[(string) ($left['key'] ?? '')]['position'] ?? PHP_INT_MAX);
+        $rightPosition = (int) ($assignmentsByKey[(string) ($right['key'] ?? '')]['position'] ?? PHP_INT_MAX);
+        return $leftPosition <=> $rightPosition;
+    });
+}
 $presetCounters = BrandpulseConfig::presetCounters();
 $savedSearches = plugin_brandpulse_saved_search_rows();
 $icons = BrandpulseConfig::pulseIcons();
@@ -768,6 +825,9 @@ echo '</ul>';
 echo '<form method="post" enctype="multipart/form-data" action="' . plugin_brandpulse_h(plugin_brandpulse_config_url($tab)) . '">';
 echo Html::hidden(plugin_brandpulse_csrf_token_name(), ['value' => Session::getNewCSRFToken()]);
 echo Html::hidden('tab', ['value' => $tab]);
+if ($tab === 'pulse') {
+    echo Html::hidden('rendered_pulse_mode', ['value' => $config['pulse_mode']]);
+}
 echo "<input type='hidden' name='MAX_FILE_SIZE' value='8388608'>";
 
 if ($errors !== []) {
@@ -873,25 +933,33 @@ if ($tab === 'brand') {
     echo "<div class='card mb-3 brandpulse-defaults-card'>";
     echo "<div class='card-header'><strong>" . __s('Default settings', 'brandpulse') . '</strong></div>';
     echo "<div class='card-body brandpulse-defaults-body'>";
+    echo "<fieldset class='brandpulse-pulse-mode-control'><legend>" . __s('Pulse display mode', 'brandpulse') . '</legend>';
+    echo "<label class='brandpulse-mode-choice'><input class='form-check-input' type='radio' name='pulse_mode' value='global' data-pulse-mode" . ($config['pulse_mode'] === 'global' ? ' checked' : '') . "><span><strong>" . __s('Global Pulse', 'brandpulse') . '</strong><small>' . __s('Use one counter composition for every authorized profile.', 'brandpulse') . '</small></span></label>';
+    echo "<label class='brandpulse-mode-choice'><input class='form-check-input' type='radio' name='pulse_mode' value='profile' data-pulse-mode" . ($config['pulse_mode'] === 'profile' ? ' checked' : '') . "><span><strong>" . __s('Pulse by profile', 'brandpulse') . '</strong><small>' . __s('Choose a separate counter composition for each active GLPI profile.', 'brandpulse') . '</small></span></label>';
+    echo "<label class='brandpulse-selfservice-choice" . ($config['pulse_mode'] === 'global' ? '' : ' d-none') . "' data-global-selfservice><input class='form-check-input' type='checkbox' name='global_selfservice_enabled' value='1'" . ($config['global_selfservice_enabled'] ? ' checked' : '') . '><span>' . __s('Also display Global Pulse for authorized self-service profiles', 'brandpulse') . '</span></label>';
+    echo '</fieldset>';
     echo "<label class='brandpulse-refresh-control'><span>" . __s('Counter refresh interval, in seconds', 'brandpulse') . "</span><input class='form-control' type='number' min='15' name='refresh_interval' value='" . (int) $config['refresh_interval'] . "'></label>";
-    echo "<label class='brandpulse-profile-limit-control'><span>" . __s('Maximum counters per profile', 'brandpulse') . "</span><span class='brandpulse-range-line'><input class='form-range' type='range' min='6' max='10' step='1' name='max_profile_counters' value='" . (int) $config['max_profile_counters'] . "' data-profile-counter-limit><output data-profile-counter-limit-value>" . (int) $config['max_profile_counters'] . '</output></span></label>';
+    echo "<label class='brandpulse-profile-limit-control'><span>" . __s('Maximum counters displayed', 'brandpulse') . "</span><span class='brandpulse-range-line'><input class='form-range' type='range' min='6' max='10' step='1' name='max_profile_counters' value='" . (int) $config['max_profile_counters'] . "' data-profile-counter-limit><output data-profile-counter-limit-value>" . (int) $config['max_profile_counters'] . '</output></span></label>';
     echo "<label class='brandpulse-search-control'>";
     echo "<span class='brandpulse-option-label'><span class='brandpulse-search-option-icon' aria-hidden='true'></span><span>" . __s('Minimize the global search field to a magnifier icon', 'brandpulse') . '</span></span>';
     echo "<input class='form-check-input' id='compact_search_enabled' type='checkbox' name='compact_search_enabled' value='1'" . ($config['compact_search_enabled'] ? ' checked' : '') . '> ';
     echo '</label>';
     echo '</div>';
+    echo "<div class='card-footer brandpulse-defaults-footer'>";
+    echo '<span class="text-muted">' . __s('Save these settings to apply the selected Pulse mode.', 'brandpulse') . '</span>';
+    echo "<button class='btn btn-primary' type='submit'><i class='ti ti-device-floppy'></i><span>" . __s('Save default settings', 'brandpulse') . '</span></button>';
     echo '</div>';
-
-    echo "<div class='alert alert-info d-flex align-items-start gap-2' role='status'>";
-    echo "<i class='ti ti-shield-check mt-1' aria-hidden='true'></i><div>";
-    echo '<strong>' . __s('Profile-based visibility', 'brandpulse') . '</strong><br>';
-    echo __s('General Pulse visibility is managed from the BrandPulse tab of each GLPI profile.', 'brandpulse');
-    echo '</div></div>';
+    echo '</div>';
 
     echo "<div class='card mb-3 brandpulse-pulse-card'>";
     echo "<div class='card-header brandpulse-pulse-toolbar'>";
     echo "<div class='brandpulse-pulse-title'><strong>" . __s('Counter catalog', 'brandpulse') . "</strong><span class='badge bg-secondary' data-pulse-row-count>" . count($counters) . '</span></div>';
     echo "<div class='brandpulse-pulse-controls'>";
+    if ($config['pulse_mode'] === 'profile') {
+        echo "<label class='brandpulse-inline-profile'><span>" . __s('GLPI profile', 'brandpulse') . '</span>';
+        echo str_replace('<select ', "<select data-pulse-profile-select data-base-url='" . plugin_brandpulse_h(plugin_brandpulse_config_url('pulse')) . "' ", plugin_brandpulse_select('profile_id', $profiles, $selectedProfileId, false));
+        echo '</label>';
+    }
     echo "<button class='btn btn-outline-secondary brandpulse-pulse-action' type='button' data-pulse-add title='" . __s('Add Pulse counter', 'brandpulse') . "' aria-label='" . __s('Add Pulse counter', 'brandpulse') . "'><i class='ti ti-plus'></i></button>";
     echo "<button class='btn btn-primary brandpulse-pulse-action' type='submit'><i class='ti ti-device-floppy'></i><span>" . __s('Save', 'brandpulse') . '</span></button>';
     echo '</div>';
@@ -900,7 +968,7 @@ if ($tab === 'brand') {
     echo "<div class='table-responsive'>";
     echo "<table class='table table-sm align-middle mb-0 brandpulse-pulse-table' data-pulse-table>";
     echo '<thead><tr>';
-    echo '<th>' . __s('Default', 'brandpulse') . '</th>';
+    echo '<th>' . ($config['pulse_mode'] === 'profile' ? __s('Visible for this profile', 'brandpulse') : __s('Visible', 'brandpulse')) . '</th>';
     echo '<th>' . __s('Label', 'brandpulse') . '</th>';
     echo '<th>' . __s('Source', 'brandpulse') . '</th>';
     echo '<th>' . __s('Target', 'brandpulse') . '</th>';
@@ -908,93 +976,25 @@ if ($tab === 'brand') {
     echo '<th>' . __s('Color', 'brandpulse') . '</th>';
     echo '<th>' . __s('Warning', 'brandpulse') . '</th>';
     echo '<th>' . __s('Critical', 'brandpulse') . '</th>';
+    if ($config['pulse_mode'] === 'profile') {
+        echo '<th>' . __s('Required', 'brandpulse') . '</th>';
+    }
     echo '<th>' . __s('Order', 'brandpulse') . '</th>';
     echo '</tr></thead><tbody data-pulse-rows>';
 
-    foreach ($counters as $index => $counter) {
-        echo plugin_brandpulse_pulse_row($index, $counter, $presetCounters, $savedSearches, $icons, $sourceTypes);
+    foreach ($displayCounters as $index => $counter) {
+        echo plugin_brandpulse_pulse_row($index, $counter, $presetCounters, $savedSearches, $icons, $sourceTypes, $config['pulse_mode'], $assignmentsByKey[(string) ($counter['key'] ?? '')] ?? null);
     }
 
     echo '</tbody></table>';
-    echo '<template data-pulse-row-template>' . plugin_brandpulse_pulse_row('__INDEX__', plugin_brandpulse_blank_pulse_counter(), $presetCounters, $savedSearches, $icons, $sourceTypes) . '</template>';
+    echo '<template data-pulse-row-template>' . plugin_brandpulse_pulse_row('__INDEX__', plugin_brandpulse_blank_pulse_counter(), $presetCounters, $savedSearches, $icons, $sourceTypes, $config['pulse_mode']) . '</template>';
     echo '</div>';
-    echo "<div class='card-footer text-muted'>" . __s('Use public GLPI saved searches or presets. The default state is inherited by new profiles until their assignment is saved. Save a new catalog counter before assigning it below.', 'brandpulse') . '</div>';
+    echo "<div class='card-footer brandpulse-catalog-footer'>";
+    echo '<span class="text-muted">' . ($config['pulse_mode'] === 'profile' ? sprintf(__s('Select up to %d counters for the selected profile.', 'brandpulse'), $config['max_profile_counters']) : __s('This composition is shared by every profile authorized to display Pulse.', 'brandpulse')) . '</span>';
+    echo "<div class='brandpulse-profile-preview-counters' data-profile-counter-preview>";
+    echo '</div></div>';
     echo '</div>';
 
-    echo "<section class='card mb-3 brandpulse-profile-pulse-card'>";
-    echo "<div class='card-header brandpulse-profile-pulse-header'>";
-    echo '<div><strong>' . __s('Profile assignment', 'brandpulse') . '</strong>';
-    echo '<span>' . __s('Choose the counters displayed when this GLPI profile is active.', 'brandpulse') . '</span></div>';
-    echo "<label><span class='visually-hidden'>" . __s('GLPI profile', 'brandpulse') . "</span>";
-    echo str_replace(
-        '<select ',
-        "<select data-pulse-profile-select data-base-url='" . plugin_brandpulse_h(plugin_brandpulse_config_url('pulse')) . "' ",
-        plugin_brandpulse_select('profile_id', $profiles, $selectedProfileId, false)
-    );
-    echo '</label></div>';
-
-    if ($profiles === []) {
-        echo "<div class='card-body'><div class='alert alert-warning mb-0'>";
-        echo __s('No GLPI profile is available.', 'brandpulse') . '</div></div>';
-    } else {
-        echo "<div class='card-body'>";
-        echo "<div class='alert alert-info d-flex align-items-start gap-2'>";
-        echo "<i class='ti ti-info-circle mt-1' aria-hidden='true'></i><div>";
-        echo sprintf(
-            __s('Select up to %d counters. Required counters are reserved for the future personal-favourites mode and cannot later be hidden by users.', 'brandpulse'),
-            $config['max_profile_counters']
-        );
-        echo '</div></div>';
-        echo "<div class='table-responsive'><table class='table table-sm align-middle mb-0 brandpulse-profile-pulse-table'>";
-        echo '<thead><tr><th>' . __s('Visible', 'brandpulse') . '</th>';
-        echo '<th>' . __s('Counter', 'brandpulse') . '</th>';
-        echo '<th>' . __s('Source', 'brandpulse') . '</th>';
-        echo '<th>' . __s('Required', 'brandpulse') . '</th>';
-        echo '<th>' . __s('Order', 'brandpulse') . '</th></tr></thead>';
-        echo '<tbody data-profile-counter-rows>';
-        foreach ($profileAssignments as $index => $assignment) {
-            $definition = $profileDefinitions[(string) $assignment['counter_key']] ?? null;
-            if (is_array($definition)) {
-                echo plugin_brandpulse_profile_counter_row($index, $assignment, $definition);
-            }
-        }
-        echo '</tbody></table></div>';
-
-        echo "<div class='brandpulse-profile-preview'>";
-        echo '<strong>' . __s('Header preview', 'brandpulse') . '</strong>';
-        echo "<div class='brandpulse-profile-preview-counters' data-profile-counter-preview>";
-        if ($resolvedProfileCounters === []) {
-            echo "<span class='text-muted'>" . __s('No counter is enabled for this profile.', 'brandpulse') . '</span>';
-        } else {
-            foreach ($resolvedProfileCounters as $definition) {
-                $path = str_starts_with((string) $definition['icon'], 'pulse:')
-                    ? substr((string) $definition['icon'], 6)
-                    : substr(BrandpulseConfig::DEFAULT_PULSE_ICON, 6);
-                $iconUrl = plugin_brandpulse_web_base() . '/ajax/icon.php?file=' . rawurlencode($path);
-                echo "<span class='brandpulse-profile-preview-counter'>";
-                echo "<span class='brandpulse-icon-preview' style='-webkit-mask-image:url(&quot;"
-                    . plugin_brandpulse_h($iconUrl) . "&quot;);mask-image:url(&quot;"
-                    . plugin_brandpulse_h($iconUrl) . "&quot;)' aria-hidden='true'></span>";
-                echo plugin_brandpulse_h((string) $definition['label']);
-                if (!empty($definition['is_mandatory'])) {
-                    echo " <i class='ti ti-lock' aria-label='" . __s('Required', 'brandpulse') . "'></i>";
-                }
-                echo '</span>';
-            }
-        }
-        echo '</div></div>';
-        echo '</div>';
-        echo "<div class='card-footer d-flex justify-content-between align-items-center gap-2 flex-wrap'>";
-        echo '<span class="text-muted" data-profile-counter-count data-count-template="'
-            . plugin_brandpulse_h(__s('%d counters currently displayed for this profile.', 'brandpulse')) . '">' . sprintf(
-            __s('%d counters currently displayed for this profile.', 'brandpulse'),
-            count($resolvedProfileCounters)
-        ) . '</span>';
-        echo "<button class='btn btn-primary' type='submit'><i class='ti ti-device-floppy'></i><span>"
-            . __s('Save Pulse and profile', 'brandpulse') . '</span></button>';
-        echo '</div>';
-    }
-    echo '</section>';
 } else {
     $assetFields = plugin_brandpulse_brand_asset_fields();
 
@@ -1015,41 +1015,6 @@ if ($tab === 'brand') {
     echo '<summary><strong>' . __s('Stored files', 'brandpulse') . '</strong><span>' . plugin_brandpulse_h(BrandAssetStore::brandDirectory()) . '</span></summary>';
     echo plugin_brandpulse_brand_diagnostic($assetFields, $branding);
     echo '</details>';
-}
-
-function plugin_brandpulse_profile_counter_row(string|int $index, array $assignment, array $definition): string
-{
-    $key = (string) ($definition['key'] ?? $assignment['counter_key'] ?? '');
-    $source = ($definition['source_type'] ?? 'preset') === 'saved_search'
-        ? __('GLPI saved search', 'brandpulse')
-        : __('GLPI preset', 'brandpulse');
-
-    $iconPath = str_starts_with((string) ($definition['icon'] ?? ''), 'pulse:')
-        ? substr((string) $definition['icon'], 6)
-        : substr(BrandpulseConfig::DEFAULT_PULSE_ICON, 6);
-    $iconUrl = plugin_brandpulse_web_base() . '/ajax/icon.php?file=' . rawurlencode($iconPath);
-    $html = "<tr data-profile-counter-row data-counter-label='"
-        . plugin_brandpulse_h((string) ($definition['label'] ?? $key))
-        . "' data-counter-icon-url='" . plugin_brandpulse_h($iconUrl) . "'>";
-    $html .= '<td>' . plugin_brandpulse_text_input(
-        "profile_counters[{$index}][counter_key]",
-        $key,
-        'hidden'
-    );
-    $html .= "<input class='form-check-input' type='checkbox' name='profile_counters[{$index}][is_active]' value='1'"
-        . (!empty($assignment['is_active']) ? ' checked' : '') . '></td>';
-    $html .= '<td><strong>' . plugin_brandpulse_h((string) ($definition['label'] ?? $key)) . '</strong>';
-    $html .= '<small class="d-block text-muted">' . plugin_brandpulse_h($key) . '</small></td>';
-    $html .= '<td>' . plugin_brandpulse_h($source) . '</td>';
-    $html .= "<td><input class='form-check-input' type='checkbox' name='profile_counters[{$index}][is_mandatory]' value='1'"
-        . (!empty($assignment['is_mandatory']) ? ' checked' : '')
-        . " aria-label='" . __s('Required profile counter', 'brandpulse') . "'></td>";
-    $html .= "<td class='brandpulse-order-cell'><div class='btn-group btn-group-sm' role='group' aria-label='" . __s('Order', 'brandpulse') . "'>";
-    $html .= "<button class='btn btn-outline-secondary' type='button' data-profile-counter-move='up' aria-label='" . __s('Move up', 'brandpulse') . "'>&uarr;</button>";
-    $html .= "<button class='btn btn-outline-secondary' type='button' data-profile-counter-move='down' aria-label='" . __s('Move down', 'brandpulse') . "'>&darr;</button>";
-    $html .= '</div></td></tr>';
-
-    return $html;
 }
 
 if (in_array($tab, ['brand', 'alert'], true)) {

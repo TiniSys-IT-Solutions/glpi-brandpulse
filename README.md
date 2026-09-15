@@ -73,11 +73,14 @@ Administration > Profils > [profil] > BrandPulse
 
 Le droit **Afficher Pulse général** est activé par défaut pour les profils utilisant l'interface standard et désactivé pour les profils self-service. Un administrateur peut adapter ce choix à chaque profil.
 
-La composition de Pulse peut également être définie dans l'onglet **Pulse** de
-BrandPulse. Sélectionnez un profil GLPI, activez jusqu'à six compteurs par défaut
-(limite réglable jusqu'à dix) et choisissez leur ordre. Le changement de profil
-actif recharge automatiquement la
-composition correspondante sans mélanger les autres profils de l'utilisateur.
+Dans l’onglet **Pulse**, choisissez un mode exclusif : **Pulse global** partage
+une composition unique entre les profils autorisés, tandis que **Pulse par
+profil** adapte la visibilité et l’ordre au profil sélectionné. Le même tableau
+de catalogue est utilisé dans les deux modes. La limite est de six compteurs par
+défaut et peut être réglée jusqu’à dix.
+
+Le mode global peut être autorisé dans l’interface self-service. Cette option ne
+contourne jamais le droit **Afficher Pulse général** du profil.
 
 Les compteurs fondés sur une recherche sauvegardée commune utilisent uniquement
 des recherches publiques. Les résultats restent filtrés par les droits, les
@@ -207,11 +210,13 @@ Administration > Profiles > [profile] > BrandPulse
 
 The **Display General Pulse** right is enabled by default for standard-interface profiles and disabled for self-service profiles. Administrators can adjust this setting for each profile.
 
-Pulse composition can also be configured from the BrandPulse **Pulse** tab.
-Select a GLPI profile, enable up to six counters by default (adjustable up to ten)
-and set their order. Switching the active profile reloads the matching
-composition without merging the user's
-other profiles.
+The BrandPulse **Pulse** tab offers two exclusive modes. **Global Pulse** shares
+one composition across authorized profiles, while **Pulse by profile** applies
+visibility and ordering to the selected profile. Both modes use the same counter
+catalogue table. The default limit is six counters and can be raised to ten.
+
+Global mode can also be enabled for the self-service interface. This option never
+bypasses the profile's **Display General Pulse** permission.
 
 Shared counters based on a saved search only accept public searches. Results are
 still filtered by the current technician's rights, active entities and recursive

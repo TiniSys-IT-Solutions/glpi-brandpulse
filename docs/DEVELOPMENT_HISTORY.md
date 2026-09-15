@@ -1,5 +1,14 @@
 # Development history
 
+## 0.2.2 — adaptive global/profile Pulse configuration
+
+- Added mutually exclusive Global Pulse and Pulse-by-profile operating modes.
+- Kept the existing counter catalogue as the single configuration table and made
+  its visibility, ordering, required state and profile selector context-aware.
+- Added an explicit Global Pulse self-service option without bypassing the
+  existing GLPI profile permission.
+- Preserved stored profile assignments when switching temporarily to global mode.
+
 ## 0.2.0 — profile-targeted Pulse
 
 - Added ordered counter assignments for each GLPI profile.
