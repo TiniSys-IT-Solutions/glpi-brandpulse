@@ -26,6 +26,7 @@
     "sort-packages": true
   },
   "scripts": {
+    "compile-translations": "php scripts/compile-translations.php",
     "test": "phpunit"
   }
 }

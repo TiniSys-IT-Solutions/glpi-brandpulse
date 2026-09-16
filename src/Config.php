@@ -121,13 +121,6 @@ final class Config
         ]);
     }
 
-    public static function isValidJsonArray(string $json): bool
-    {
-        $decoded = json_decode($json, true);
-
-        return json_last_error() === JSON_ERROR_NONE && is_array($decoded);
-    }
-
     public static function defaults(): array
     {
         return [
@@ -137,7 +130,6 @@ final class Config
             'pulse_mode' => 'global',
             'global_selfservice_enabled' => '0',
             'compact_search_enabled' => '0',
-            'pulse_interface' => 'central',
             'branding_json' => self::encodeJson(self::defaultBranding()),
             'counters_json' => self::encodeJson(self::defaultCounters()),
             self::SCHEMA_VERSION_KEY => '',
@@ -284,27 +276,27 @@ final class Config
         $branding = array_replace(self::defaultBranding(), $branding);
         $allowedAlertTypes = ['info', 'warning', 'danger', 'success'];
 
-        $menuLogo = trim((string) $branding['menu_logo']);
-        $loginLogo = trim((string) $branding['login_logo']);
-        $sidebarExpandedLight = trim((string) $branding['logo_sidebar_expanded_light']) ?: $menuLogo;
-        $loginLogoLight = trim((string) $branding['login_logo_light']) ?: $loginLogo;
+        $menuLogo = self::normalizeAssetReference((string) $branding['menu_logo']);
+        $loginLogo = self::normalizeAssetReference((string) $branding['login_logo']);
+        $sidebarExpandedLight = self::normalizeAssetReference((string) $branding['logo_sidebar_expanded_light']) ?: $menuLogo;
+        $loginLogoLight = self::normalizeAssetReference((string) $branding['login_logo_light']) ?: $loginLogo;
 
         return [
             'enabled' => !empty($branding['enabled']),
             'title' => trim((string) $branding['title']),
-            'favicon' => trim((string) $branding['favicon']),
+            'favicon' => self::normalizeAssetReference((string) $branding['favicon']),
             'login_logo' => $loginLogo,
             'menu_logo' => $menuLogo,
             'login_logo_light' => $loginLogoLight,
-            'login_logo_dark' => trim((string) $branding['login_logo_dark']),
-            'login_logo_grey' => trim((string) $branding['login_logo_grey']),
+            'login_logo_dark' => self::normalizeAssetReference((string) $branding['login_logo_dark']),
+            'login_logo_grey' => self::normalizeAssetReference((string) $branding['login_logo_grey']),
             'logo_sidebar_expanded_light' => $sidebarExpandedLight,
-            'logo_sidebar_expanded_dark' => trim((string) $branding['logo_sidebar_expanded_dark']),
-            'logo_sidebar_expanded_grey' => trim((string) $branding['logo_sidebar_expanded_grey']),
-            'logo_sidebar_collapsed_light' => trim((string) $branding['logo_sidebar_collapsed_light']),
-            'logo_sidebar_collapsed_dark' => trim((string) $branding['logo_sidebar_collapsed_dark']),
-            'logo_sidebar_collapsed_grey' => trim((string) $branding['logo_sidebar_collapsed_grey']),
-            'login_background' => trim((string) $branding['login_background']),
+            'logo_sidebar_expanded_dark' => self::normalizeAssetReference((string) $branding['logo_sidebar_expanded_dark']),
+            'logo_sidebar_expanded_grey' => self::normalizeAssetReference((string) $branding['logo_sidebar_expanded_grey']),
+            'logo_sidebar_collapsed_light' => self::normalizeAssetReference((string) $branding['logo_sidebar_collapsed_light']),
+            'logo_sidebar_collapsed_dark' => self::normalizeAssetReference((string) $branding['logo_sidebar_collapsed_dark']),
+            'logo_sidebar_collapsed_grey' => self::normalizeAssetReference((string) $branding['logo_sidebar_collapsed_grey']),
+            'login_background' => self::normalizeAssetReference((string) $branding['login_background']),
             'login_alert_enabled' => !empty($branding['login_alert_enabled']),
             'login_alert_type' => in_array($branding['login_alert_type'], $allowedAlertTypes, true)
                 ? (string) $branding['login_alert_type']
@@ -423,6 +415,21 @@ final class Config
         }
 
         return self::localPulseIconExists($path) ? 'pulse:' . $path : self::DEFAULT_PULSE_ICON;
+    }
+
+    private static function normalizeAssetReference(string $value): string
+    {
+        $value = trim($value);
+        if ($value === '' || preg_match('/[\x00-\x1F\x7F]/', $value) === 1) {
+            return '';
+        }
+
+        $scheme = parse_url($value, PHP_URL_SCHEME);
+        if ($scheme !== null && !in_array(strtolower((string) $scheme), ['http', 'https'], true)) {
+            return '';
+        }
+
+        return $value;
     }
 
     private static function localPulseIconExists(string $path): bool

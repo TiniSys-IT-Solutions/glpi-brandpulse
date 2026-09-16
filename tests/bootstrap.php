@@ -23,6 +23,16 @@ if (!class_exists('Profile')) {
     }
 }
 
+if (!class_exists('ProfileRight')) {
+    class ProfileRight
+    {
+        public static function getTable(): string
+        {
+            return 'glpi_profilerights';
+        }
+    }
+}
+
 if (!class_exists('SavedSearch')) {
     class SavedSearch
     {

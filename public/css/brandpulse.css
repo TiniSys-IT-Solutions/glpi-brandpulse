@@ -43,8 +43,7 @@
 }
 
 .brandpulse-icon,
-.brandpulse-search-trigger-icon,
-.brandpulse-icon-swatch {
+.brandpulse-search-trigger-icon {
   display: inline-block;
   background-color: currentColor;
   -webkit-mask-position: center;
@@ -66,16 +65,6 @@
   color: #ffffff;
   font-size: 0.82rem;
   font-weight: 800;
-}
-
-.brandpulse-color-preview {
-  display: inline-block;
-  width: 1rem;
-  height: 1rem;
-  margin-right: 0.4rem;
-  border: 1px solid rgba(0, 0, 0, 0.18);
-  border-radius: 0.2rem;
-  vertical-align: text-bottom;
 }
 
 @media (max-width: 980px) {
@@ -929,6 +918,22 @@ section.brandpulse-brand-section > .form-check {
 
 .brandpulse-pulse-card {
   overflow: hidden;
+}
+
+.brandpulse-profile-right-warning {
+  display: flex;
+  gap: 0.65rem;
+  align-items: flex-start;
+}
+
+.brandpulse-profile-right-warning > i {
+  margin-top: 0.15rem;
+  font-size: 1.15rem;
+}
+
+.brandpulse-profile-right-warning > div {
+  display: grid;
+  gap: 0.2rem;
 }
 
 .brandpulse-pulse-toolbar {

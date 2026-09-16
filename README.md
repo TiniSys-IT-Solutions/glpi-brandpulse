@@ -120,7 +120,8 @@ Les images importées depuis BrandPulse restent conservées par GLPI afin de sur
 Réservez la configuration du plugin aux administrateurs GLPI de confiance et
 effectuez une sauvegarde avant installation ou mise à jour. Consultez la
 [politique de sécurité](SECURITY.md) pour le signalement responsable des
-vulnérabilités.
+vulnérabilités et la [référence d’architecture et de sécurité](docs/ARCHITECTURE_SECURITY.md)
+pour le modèle des routes, des droits et des données.
 
 ### Contribution
 
@@ -255,7 +256,9 @@ Images imported through BrandPulse are kept in GLPI storage so they remain avail
 
 Restrict plugin configuration to trusted GLPI administrators and create a
 backup before installation or upgrade. See the [security policy](SECURITY.md)
-for responsible vulnerability reporting.
+for responsible vulnerability reporting and the
+[architecture and security baseline](docs/ARCHITECTURE_SECURITY.md) for route,
+permission and data models.
 
 ### Contributing
 

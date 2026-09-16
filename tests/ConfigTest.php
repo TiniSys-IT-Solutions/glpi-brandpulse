@@ -26,6 +26,7 @@ final class ConfigTest extends TestCase
     public function testPulseModeDefaultsToGlobalAndNormalizesInvalidValues(): void
     {
         self::assertSame('global', Config::values()['pulse_mode']);
+        self::assertArrayNotHasKey('pulse_interface', Config::defaults());
         \Config::$values[Config::CONTEXT] = ['pulse_mode' => 'invalid'];
         self::assertSame('global', Config::values()['pulse_mode']);
     }
@@ -47,6 +48,24 @@ final class ConfigTest extends TestCase
         self::assertSame('login.svg', $branding['login_logo_light']);
         self::assertSame('info', $branding['login_alert_type']);
         self::assertSame(Config::DEFAULT_PULSE_ICON, $branding['login_alert_icon']);
+    }
+
+    public function testBrandAssetsRejectActiveOrMalformedSchemes(): void
+    {
+        $branding = Config::normalizeBranding([
+            'favicon' => 'javascript:alert(1)',
+            'login_background' => "https://example.test/background.png\nInjected",
+            'logo_sidebar_expanded_dark' => 'https://example.test/logo.svg',
+            'logo_sidebar_collapsed_dark' => '/plugins/brandpulse/front/asset.php?file=logo.svg',
+        ]);
+
+        self::assertSame('', $branding['favicon']);
+        self::assertSame('', $branding['login_background']);
+        self::assertSame('https://example.test/logo.svg', $branding['logo_sidebar_expanded_dark']);
+        self::assertSame(
+            '/plugins/brandpulse/front/asset.php?file=logo.svg',
+            $branding['logo_sidebar_collapsed_dark']
+        );
     }
 
     public function testSavedSearchCounterGetsStableKeyAndSafeValues(): void

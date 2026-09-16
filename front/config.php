@@ -11,6 +11,7 @@ if (file_exists($autoload)) {
 
 use GlpiPlugin\Brandpulse\BrandAssetStore;
 use GlpiPlugin\Brandpulse\Config as BrandpulseConfig;
+use GlpiPlugin\Brandpulse\Profile as BrandpulseProfile;
 use GlpiPlugin\Brandpulse\ProfileCounterStore;
 use GlpiPlugin\Brandpulse\PulseResolver;
 
@@ -964,6 +965,14 @@ if ($tab === 'brand') {
     echo "<button class='btn btn-primary brandpulse-pulse-action' type='submit'><i class='ti ti-device-floppy'></i><span>" . __s('Save', 'brandpulse') . '</span></button>';
     echo '</div>';
     echo '</div>';
+
+    if ($config['pulse_mode'] === 'profile' && !BrandpulseProfile::profileCanViewGeneralPulse($selectedProfileId)) {
+        echo "<div class='alert alert-warning mx-3 mt-3 mb-0 brandpulse-profile-right-warning' role='alert'>";
+        echo "<i class='ti ti-alert-triangle' aria-hidden='true'></i><div>";
+        echo '<strong>' . __s('Pulse is not authorized for this profile', 'brandpulse') . '</strong>';
+        echo '<span>' . __s('The selected counters are saved, but users will not see them until the "Display General Pulse" permission is enabled in Administration > Profiles > BrandPulse.', 'brandpulse') . '</span>';
+        echo '</div></div>';
+    }
 
     echo "<div class='table-responsive'>";
     echo "<table class='table table-sm align-middle mb-0 brandpulse-pulse-table' data-pulse-table>";

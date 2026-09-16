@@ -1,5 +1,15 @@
 # Development history
 
+## 0.2.3 — consistency and security review
+
+- Audited authenticated, administrative and public asset routes against GLPI
+  11.0.8 integration patterns.
+- Added a visible warning when a profile composition is configured while the
+  profile permission still prevents Pulse from being displayed.
+- Removed unused implementation remnants, including the obsolete
+  `pulse_interface` setting, and reran the complete release checks.
+- Restricted brand asset references to safe HTTP(S) and local path forms.
+
 ## 0.2.2 — adaptive global/profile Pulse configuration
 
 - Added mutually exclusive Global Pulse and Pulse-by-profile operating modes.

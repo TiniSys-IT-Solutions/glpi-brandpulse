@@ -38,6 +38,8 @@ final class Migrator
             return false;
         }
 
+        self::removeObsoleteConfiguration();
+
         Config::setSchemaVersion($targetVersion);
 
         return true;
@@ -78,5 +80,12 @@ final class Migrator
             $values['compact_search_enabled'],
             $values['counters']
         );
+    }
+
+    private static function removeObsoleteConfiguration(): void
+    {
+        if (method_exists(\Config::class, 'deleteConfigurationValues')) {
+            \Config::deleteConfigurationValues(Config::CONTEXT, ['pulse_interface']);
+        }
     }
 }

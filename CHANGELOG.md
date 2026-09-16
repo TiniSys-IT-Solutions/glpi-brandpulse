@@ -5,6 +5,23 @@ All notable public changes to GLPI BrandPulse are documented here.
 Detailed pre-public iterations remain available in
 [docs/DEVELOPMENT_HISTORY.md](docs/DEVELOPMENT_HISTORY.md).
 
+## [0.2.3] - 2026-09-16
+
+### Changed
+
+- Clarify in Pulse-by-profile mode when the selected GLPI profile does not have
+  the required **Display General Pulse** permission, without changing profile
+  rights implicitly.
+- Remove unused PHP, CSS and legacy `pulse_interface` configuration remnants
+  identified during the full consistency review.
+- Revalidate routes, access control, CSRF protection, database lifecycle,
+  GLPI 11.0.8 integration and release packaging.
+
+### Security
+
+- Restrict configured external brand asset references to HTTP(S), root-relative
+  or relative paths and reject active or malformed URI schemes.
+
 ## [0.2.2] - 2026-09-15
 
 ### Added

@@ -30,6 +30,33 @@ final class Profile extends \Profile
             && Session::haveRight(self::RIGHT_VIEW_GENERAL_PULSE, READ);
     }
 
+    public static function profileCanViewGeneralPulse(int $profileId): bool
+    {
+        global $DB;
+
+        if ($profileId <= 0 || !isset($DB) || !class_exists(ProfileRight::class)) {
+            return false;
+        }
+
+        try {
+            foreach ($DB->request([
+                'SELECT' => ['rights'],
+                'FROM' => ProfileRight::getTable(),
+                'WHERE' => [
+                    'profiles_id' => $profileId,
+                    'name' => self::RIGHT_VIEW_GENERAL_PULSE,
+                ],
+                'LIMIT' => 1,
+            ]) as $right) {
+                return (((int) ($right['rights'] ?? 0)) & READ) === READ;
+            }
+        } catch (\Throwable) {
+            return false;
+        }
+
+        return false;
+    }
+
     public static function installRights(): void
     {
         global $DB;

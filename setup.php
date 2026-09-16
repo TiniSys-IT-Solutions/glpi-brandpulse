@@ -10,7 +10,7 @@ use GlpiPlugin\Brandpulse\Profile as BrandpulseProfile;
 
 defined('GLPI_ROOT') or die('No direct access allowed');
 
-const PLUGIN_BRANDPULSE_VERSION = '0.2.2';
+const PLUGIN_BRANDPULSE_VERSION = '0.2.3';
 const PLUGIN_BRANDPULSE_SCHEMA_VERSION = '0.1.44';
 const PLUGIN_BRANDPULSE_MIN_GLPI = '11.0.0';
 const PLUGIN_BRANDPULSE_MAX_GLPI = '12.0.0';

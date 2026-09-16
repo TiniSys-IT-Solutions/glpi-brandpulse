@@ -1,6 +1,6 @@
 msgid ""
 msgstr ""
-"Project-Id-Version: GLPI BrandPulse 0.2.2\n"
+"Project-Id-Version: GLPI BrandPulse 0.2.3\n"
 "Report-Msgid-Bugs-To: https://github.com/TiniSys-IT-Solutions/glpi-brandpulse/issues\n"
 "POT-Creation-Date: 2026-08-10 00:00+0000\n"
 "PO-Revision-Date: 2026-08-10 00:00+0000\n"
@@ -671,3 +671,9 @@ msgstr "Enregistrez ces réglages pour appliquer le mode Pulse sélectionné."
 
 msgid "Save default settings"
 msgstr "Enregistrer les réglages par défaut"
+
+msgid "Pulse is not authorized for this profile"
+msgstr "Pulse n’est pas autorisé pour ce profil"
+
+msgid "The selected counters are saved, but users will not see them until the \"Display General Pulse\" permission is enabled in Administration > Profiles > BrandPulse."
+msgstr "Les compteurs sélectionnés sont enregistrés, mais les utilisateurs ne les verront pas tant que le droit « Afficher Pulse général » ne sera pas activé dans Administration > Profils > BrandPulse."
