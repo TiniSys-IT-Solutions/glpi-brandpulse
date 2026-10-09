@@ -78,7 +78,10 @@ final class Migrator
             $values['enabled'],
             $values['refresh_interval'],
             $values['compact_search_enabled'],
-            $values['counters']
+            $values['counters'],
+            $values['max_profile_counters'],
+            $values['pulse_mode'],
+            $values['global_selfservice_enabled']
         );
     }
 

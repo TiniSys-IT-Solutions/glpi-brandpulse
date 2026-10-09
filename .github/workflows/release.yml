@@ -17,8 +17,27 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
 
+      - name: Set up PHP
+        uses: shivammathur/setup-php@v2
+        with:
+          php-version: '8.2'
+          extensions: dom, fileinfo, simplexml
+          coverage: none
+
       - name: Validate composer metadata
         run: composer validate --no-check-publish
+
+      - name: Install development dependencies
+        run: composer install --no-interaction --prefer-dist --no-progress
+
+      - name: Audit dependencies
+        run: composer audit
+
+      - name: Run regression tests
+        run: |
+          composer test
+          node --check public/js/brandpulse.js
+          node --test tests/*.test.js
 
       - name: Lint PHP files
         run: find . -path ./vendor -prune -o -name '*.php' -print0 | xargs -0 -n1 php -l
@@ -30,7 +49,7 @@ jobs:
         run: |
           VERSION="${GITHUB_REF_NAME#v}"
           mkdir -p dist
-          awk "/^## ${VERSION}/{flag=1; next} /^## /{flag=0} flag" CHANGELOG.md > dist/release-notes.md
+          awk -v version="${VERSION}" '$0 ~ "^## \\[" version "\\]" {flag=1; next} /^## /{flag=0} flag' CHANGELOG.md > dist/release-notes.md
           if [ ! -s dist/release-notes.md ]; then
             printf 'GLPI BrandPulse %s\n' "${GITHUB_REF_NAME}" > dist/release-notes.md
           fi
@@ -40,10 +59,10 @@ jobs:
           GH_TOKEN: ${{ github.token }}
         run: |
           VERSION="${GITHUB_REF_NAME#v}"
-          ARCHIVE="dist/glpi-brandpulse-${VERSION}.zip"
+          ARCHIVE="dist/brandpulse-${VERSION}.zip"
 
           if gh release view "${GITHUB_REF_NAME}" >/dev/null 2>&1; then
-            gh release upload "${GITHUB_REF_NAME}" "${ARCHIVE}" --clobber
+            gh release upload "${GITHUB_REF_NAME}" "${ARCHIVE}"
           else
             gh release create "${GITHUB_REF_NAME}" "${ARCHIVE}" \
               --title "GLPI BrandPulse ${GITHUB_REF_NAME}" \

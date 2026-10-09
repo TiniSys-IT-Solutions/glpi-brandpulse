@@ -1,0 +1,72 @@
+<div class="modal fade" id="brandpulse-ticket-view" tabindex="-1" aria-labelledby="brandpulse-ticket-view-title"
+     data-pulse-view-modal data-view-options="{{ options|json_encode }}" data-default-columns="{{ default_columns|json_encode }}">
+    <div class="modal-dialog modal-lg modal-dialog-scrollable">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h4 class="modal-title" id="brandpulse-ticket-view-title">{{ __('Configure ticket view', 'brandpulse') }}</h4>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="{{ __('Close', 'brandpulse') }}"></button>
+            </div>
+            <div class="modal-body">
+                <p class="fw-semibold" data-view-counter-name></p>
+                <div class="form-check form-switch mb-3">
+                    <input class="form-check-input" type="checkbox" id="brandpulse-view-use-glpi" data-view-use-glpi checked>
+                    <label class="form-check-label" for="brandpulse-view-use-glpi">{{ __('Use GLPI preferences', 'brandpulse') }}</label>
+                </div>
+                <p class="text-muted">{{ __('These settings apply to this Pulse link. Personal ticket display preferences remain unchanged.', 'brandpulse') }}</p>
+                {% if options is empty %}
+                    <div class="alert alert-warning">{{ __('Ticket fields are unavailable with your current permissions.', 'brandpulse') }}</div>
+                {% endif %}
+                <fieldset data-view-custom>
+                    <legend class="fs-5">{{ __('Columns and order', 'brandpulse') }}</legend>
+                    <p class="text-muted">{{ __('GLPI keeps its fixed columns first. Reorder the other columns below.', 'brandpulse') }}</p>
+                    <ul class="list-group mb-3">
+                        {% for id, option in options %}
+                            {% if option.fixed %}
+                                <li class="list-group-item d-flex justify-content-between align-items-center">
+                                    <span>{{ option.name }}</span><span class="badge bg-secondary">{{ __('Fixed column', 'brandpulse') }}</span>
+                                </li>
+                            {% endif %}
+                        {% endfor %}
+                    </ul>
+                    <label for="brandpulse-view-column" class="form-label">{{ __('Add a column', 'brandpulse') }}</label>
+                    <div class="input-group mb-3">
+                        <select class="form-select" id="brandpulse-view-column" data-view-available>
+                            {% for id, option in options %}
+                                {% if not option.fixed %}
+                                    <option value="{{ id }}">{{ option.group }} — {{ option.name }}</option>
+                                {% endif %}
+                            {% endfor %}
+                        </select>
+                        <button type="button" class="btn btn-outline-secondary" data-view-add>{{ __('Add', 'brandpulse') }}</button>
+                    </div>
+                    <ul class="list-group mb-3" data-view-columns></ul>
+                    <div class="row g-3">
+                        <div class="col-md-8">
+                            <label for="brandpulse-view-sort" class="form-label">{{ __('Sort by', 'brandpulse') }}</label>
+                            <select class="form-select" id="brandpulse-view-sort" data-view-sort>
+                                <option value="0">{{ __('Keep the default or saved-search sort', 'brandpulse') }}</option>
+                                {% for id, option in options %}
+                                    {% if option.sortable %}
+                                        <option value="{{ id }}">{{ option.group }} — {{ option.name }}</option>
+                                    {% endif %}
+                                {% endfor %}
+                            </select>
+                        </div>
+                        <div class="col-md-4">
+                            <label for="brandpulse-view-order" class="form-label">{{ __('Sort direction', 'brandpulse') }}</label>
+                            <select class="form-select" id="brandpulse-view-order" data-view-order>
+                                <option value="ASC">{{ __('Ascending', 'brandpulse') }}</option>
+                                <option value="DESC">{{ __('Descending', 'brandpulse') }}</option>
+                            </select>
+                        </div>
+                    </div>
+                </fieldset>
+            </div>
+            <div class="modal-footer">
+                <span class="text-muted me-auto">{{ __('Apply, then save the Pulse configuration.', 'brandpulse') }}</span>
+                <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">{{ __('Cancel', 'brandpulse') }}</button>
+                <button type="button" class="btn btn-primary" data-view-apply>{{ __('Apply', 'brandpulse') }}</button>
+            </div>
+        </div>
+    </div>
+</div>

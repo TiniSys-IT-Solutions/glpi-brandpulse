@@ -10,7 +10,7 @@ use GlpiPlugin\Brandpulse\Profile as BrandpulseProfile;
 
 defined('GLPI_ROOT') or die('No direct access allowed');
 
-const PLUGIN_BRANDPULSE_VERSION = '0.2.3';
+const PLUGIN_BRANDPULSE_VERSION = '0.2.8';
 const PLUGIN_BRANDPULSE_SCHEMA_VERSION = '0.1.44';
 const PLUGIN_BRANDPULSE_MIN_GLPI = '11.0.0';
 const PLUGIN_BRANDPULSE_MAX_GLPI = '12.0.0';
@@ -42,6 +42,7 @@ function plugin_init_brandpulse(): void
         Firewall::addPluginStrategyForLegacyScripts('brandpulse', '#^/front/asset\.php$#', Firewall::STRATEGY_NO_CHECK);
         Firewall::addPluginStrategyForLegacyScripts('brandpulse', '#^/front/branding\.css\.php$#', Firewall::STRATEGY_NO_CHECK);
         Firewall::addPluginStrategyForLegacyScripts('brandpulse', '#^/ajax/counters\.php$#', Firewall::STRATEGY_AUTHENTICATED);
+        Firewall::addPluginStrategyForLegacyScripts('brandpulse', '#^/ajax/asset-management-link\.php$#', Firewall::STRATEGY_AUTHENTICATED);
         Firewall::addPluginStrategyForLegacyScripts('brandpulse', '#^/ajax/branding\.php$#', Firewall::STRATEGY_NO_CHECK);
         Firewall::addPluginStrategyForLegacyScripts('brandpulse', '#^/ajax/icons\.php$#', Firewall::STRATEGY_CENTRAL_ACCESS);
         Firewall::addPluginStrategyForLegacyScripts('brandpulse', '#^/ajax/icon\.php$#', Firewall::STRATEGY_NO_CHECK);
@@ -62,6 +63,13 @@ function plugin_init_brandpulse(): void
         }
 
         $PLUGIN_HOOKS[Hooks::ADD_JAVASCRIPT]['brandpulse'][] = 'js/brandpulse.js';
+        $PLUGIN_HOOKS[Hooks::PRE_ITEM_FORM]['brandpulse'] = [
+            Computer::class => 'plugin_brandpulse_pre_item_form',
+            NetworkEquipment::class => 'plugin_brandpulse_pre_item_form',
+            Printer::class => 'plugin_brandpulse_pre_item_form',
+            Phone::class => 'plugin_brandpulse_pre_item_form',
+            PDU::class => 'plugin_brandpulse_pre_item_form',
+        ];
 
         if (defined(Hooks::class . '::ADD_CSS_ANONYMOUS_PAGE')) {
             $PLUGIN_HOOKS[Hooks::ADD_CSS_ANONYMOUS_PAGE]['brandpulse'][] = 'css/brandpulse.css';

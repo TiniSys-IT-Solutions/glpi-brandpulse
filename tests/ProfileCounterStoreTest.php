@@ -70,6 +70,24 @@ final class ProfileCounterStoreTest extends TestCase
         self::assertCount(count(BrandpulseConfig::defaultCounters()) * 2, $database->rows);
     }
 
+    public function testOldMigrationPreservesPulseOptions(): void
+    {
+        $GLOBALS['DB'] = new ProfileCounterStoreFakeDatabase();
+        \Config::$values[BrandpulseConfig::CONTEXT] = [
+            BrandpulseConfig::SCHEMA_VERSION_KEY => '0.1.1',
+            'pulse_mode' => 'profile',
+            'global_selfservice_enabled' => '1',
+            'max_profile_counters' => '10',
+        ];
+        // Run the normalization used by both old migration steps without
+        // invoking unrelated GLPI rights installation in this unit fixture.
+        (new \ReflectionMethod(Migrator::class, 'normalizeStoredConfiguration'))->invoke(null);
+        $values = BrandpulseConfig::values();
+        self::assertSame('profile', $values['pulse_mode']);
+        self::assertTrue($values['global_selfservice_enabled']);
+        self::assertSame(10, $values['max_profile_counters']);
+    }
+
     public function testNewCatalogEntryBecomesAvailableToExistingProfileWithoutBeingEnabled(): void
     {
         $database = new ProfileCounterStoreFakeDatabase();

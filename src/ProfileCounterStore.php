@@ -174,7 +174,7 @@ final class ProfileCounterStore
         );
         if ($activeCount > $maximum) {
             throw new RuntimeException(sprintf(
-                'A profile can display at most %d Pulse counters.',
+                __('A profile can display at most %d Pulse counters.', 'brandpulse'),
                 $maximum
             ));
         }

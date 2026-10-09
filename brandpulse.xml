@@ -27,6 +27,21 @@
   </tags>
   <versions>
     <version>
+      <num>0.2.8</num>
+      <compatibility>^11.0</compatibility>
+      <download_url>https://github.com/TiniSys-IT-Solutions/glpi-brandpulse/releases/download/v0.2.8/brandpulse-0.2.8.zip</download_url>
+    </version>
+    <version>
+      <num>0.2.5</num>
+      <compatibility>^11.0</compatibility>
+      <download_url>https://github.com/TiniSys-IT-Solutions/glpi-brandpulse/releases/download/v0.2.5/brandpulse-0.2.5.zip</download_url>
+    </version>
+    <version>
+      <num>0.2.4</num>
+      <compatibility>^11.0</compatibility>
+      <download_url>https://github.com/TiniSys-IT-Solutions/glpi-brandpulse/releases/download/v0.2.4/glpi-brandpulse-0.2.4.zip</download_url>
+    </version>
+    <version>
       <num>0.2.3</num>
       <compatibility>^11.0</compatibility>
       <download_url>https://github.com/TiniSys-IT-Solutions/glpi-brandpulse/releases/download/v0.2.3/glpi-brandpulse-0.2.3.zip</download_url>

@@ -41,6 +41,12 @@ jobs:
       - name: Run unit tests
         run: composer test
 
+      - name: Audit dependencies
+        run: composer audit
+
+      - name: Run JavaScript regression tests
+        run: node --test tests/*.test.js
+
       - name: Lint PHP files
         run: find . -path ./vendor -prune -o -path ./dist -prune -o -name '*.php' -print0 | xargs -0 -n1 php -l
 
@@ -50,3 +56,6 @@ jobs:
       - name: Validate plugin XML
         run: |
           php -r 'exit(simplexml_load_file("brandpulse.xml") === false ? 1 : 0);'
+
+      - name: Verify release packaging
+        run: ./scripts/build-release.sh

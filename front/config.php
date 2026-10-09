@@ -14,6 +14,8 @@ use GlpiPlugin\Brandpulse\Config as BrandpulseConfig;
 use GlpiPlugin\Brandpulse\Profile as BrandpulseProfile;
 use GlpiPlugin\Brandpulse\ProfileCounterStore;
 use GlpiPlugin\Brandpulse\PulseResolver;
+use GlpiPlugin\Brandpulse\TicketView;
+use GlpiPlugin\Brandpulse\ProfileAccess;
 
 Session::checkLoginUser();
 Session::checkRight('config', UPDATE);
@@ -277,40 +279,8 @@ function plugin_brandpulse_unsupported_image_error(string $label): RuntimeExcept
 
 function plugin_brandpulse_validate_svg_upload(string $tmpName, string $label): void
 {
-    $content = (string) file_get_contents($tmpName);
-    if ($content === '' || str_contains($content, '<!DOCTYPE')) {
+    if (!BrandAssetStore::isSafeSvg((string) file_get_contents($tmpName))) {
         throw plugin_brandpulse_unsupported_image_error($label);
-    }
-
-    $previous = libxml_use_internal_errors(true);
-    $document = new DOMDocument();
-    $loaded = $document->loadXML($content, LIBXML_NONET | LIBXML_NOBLANKS | LIBXML_NOERROR | LIBXML_NOWARNING);
-    libxml_clear_errors();
-    libxml_use_internal_errors($previous);
-
-    if (!$loaded || strtolower((string) $document->documentElement?->localName) !== 'svg') {
-        throw plugin_brandpulse_unsupported_image_error($label);
-    }
-
-    $blockedElements = ['script', 'foreignobject', 'iframe', 'object', 'embed', 'audio', 'video'];
-    foreach ($document->getElementsByTagName('*') as $element) {
-        if (in_array(strtolower($element->localName), $blockedElements, true)) {
-            throw plugin_brandpulse_unsupported_image_error($label);
-        }
-
-        foreach ($element->attributes ?? [] as $attribute) {
-            $name = strtolower($attribute->localName);
-            $value = html_entity_decode(trim($attribute->value), ENT_QUOTES | ENT_HTML5, 'UTF-8');
-            if (str_starts_with($name, 'on')) {
-                throw plugin_brandpulse_unsupported_image_error($label);
-            }
-            if (in_array($name, ['href', 'src'], true) && preg_match('/^\s*(?:javascript:|data:|https?:|\/\/)/i', $value)) {
-                throw plugin_brandpulse_unsupported_image_error($label);
-            }
-            if ($name === 'style' && preg_match('/(?:url\s*\(|expression\s*\(|@import)/i', $value)) {
-                throw plugin_brandpulse_unsupported_image_error($label);
-            }
-        }
     }
 }
 
@@ -497,7 +467,14 @@ function plugin_brandpulse_pulse_row(
             . ($mandatory ? ' checked' : '') . ($profileActive ? '' : ' disabled')
             . " aria-label='" . __s('Required profile counter', 'brandpulse') . "'></td>";
     }
-    $html .= "<td class='brandpulse-order-cell'><div class='btn-group btn-group-sm' role='group' aria-label='" . __s('Order', 'brandpulse') . "'>";
+    $view = TicketView::normalize(is_array($counter['view'] ?? null) ? $counter['view'] : []);
+    $html .= "<td><input type='hidden' data-pulse-view name='counters[{$index}][view_json]' value='"
+        . plugin_brandpulse_h((string) json_encode($view, JSON_UNESCAPED_UNICODE)) . "'>";
+    $html .= "<button type='button' class='btn btn-sm btn-outline-secondary' data-pulse-view-open title='"
+        . __s('Configure ticket view', 'brandpulse') . "' aria-label='" . __s('Configure ticket view', 'brandpulse') . "'>"
+        . "<i class='ti ti-settings' aria-hidden='true'></i> <span data-pulse-view-label>"
+        . ($view['use_glpi'] ? __s('GLPI preferences', 'brandpulse') : __s('Custom view', 'brandpulse')) . '</span></button></td>';
+    $html .= "<td class='brandpulse-order-cell'><span data-pulse-position class='badge bg-secondary me-1'></span><button type='button' class='btn btn-sm btn-outline-secondary me-1' draggable='true' data-pulse-drag title='" . __s('Drag to reorder', 'brandpulse') . "' aria-label='" . __s('Drag to reorder', 'brandpulse') . "'><i class='ti ti-grip-vertical' aria-hidden='true'></i></button><div class='btn-group btn-group-sm' role='group' aria-label='" . __s('Order', 'brandpulse') . "'>";
     $html .= "<button class='btn btn-outline-secondary' type='button' data-pulse-move='up' title='" . __s('Move up', 'brandpulse') . "' aria-label='" . __s('Move up', 'brandpulse') . "'>&uarr;</button>";
     $html .= "<button class='btn btn-outline-secondary' type='button' data-pulse-move='down' title='" . __s('Move down', 'brandpulse') . "' aria-label='" . __s('Move down', 'brandpulse') . "'>&darr;</button>";
     $html .= '</div></td>';
@@ -599,7 +576,7 @@ function plugin_brandpulse_brand_diagnostic(array $fields, array $branding): str
 
 
 $tab = (string) ($_GET['tab'] ?? $_POST['tab'] ?? 'brand');
-$tab = in_array($tab, ['brand', 'alert', 'pulse', 'diagnostic'], true) ? $tab : 'brand';
+$tab = in_array($tab, ['brand', 'alert', 'pulse', 'features', 'diagnostic'], true) ? $tab : 'brand';
 $errors = [];
 $profiles = plugin_brandpulse_profile_rows();
 $selectedProfileId = plugin_brandpulse_valid_profile_id(
@@ -651,7 +628,29 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         Html::redirect(plugin_brandpulse_config_url('alert'));
     }
 
-    if ($tab === 'pulse') {
+    if ($tab === 'features') {
+        $itemtypes = is_array($_POST['asset_management_itemtypes'] ?? null)
+            ? $_POST['asset_management_itemtypes']
+            : [];
+        BrandpulseConfig::saveAssetManagement(
+            isset($_POST['asset_management_enabled']),
+            (string) ($_POST['asset_management_scheme'] ?? 'https'),
+            $itemtypes
+        );
+        Session::addMessageAfterRedirect(__('Feature settings updated.', 'brandpulse'));
+        Html::redirect(plugin_brandpulse_config_url('features'));
+    }
+
+    if ($tab === 'pulse' && ($_POST['pulse_action'] ?? '') === 'profile_access') {
+        try {
+            ProfileAccess::save(is_array($_POST['pulse_profile_access'] ?? null) ? $_POST['pulse_profile_access'] : []);
+            Session::addMessageAfterRedirect(__('Pulse profile permissions updated.', 'brandpulse'));
+            Html::redirect(plugin_brandpulse_config_url('pulse') . '&profile_id=' . $selectedProfileId);
+        } catch (RuntimeException $exception) {
+            $errors[] = __($exception->getMessage(), 'brandpulse');
+        }
+    }
+    if ($tab === 'pulse' && ($_POST['pulse_action'] ?? '') !== 'profile_access') {
         $postedCounters = is_array($_POST['counters'] ?? null) ? $_POST['counters'] : [];
         $counters = [];
         $submittedAssignments = [];
@@ -681,6 +680,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 'savedsearches_id' => $savedSearchId,
                 'warning_threshold' => (int) ($row['warning_threshold'] ?? 0),
                 'critical_threshold' => (int) ($row['critical_threshold'] ?? 0),
+                'view' => json_decode((string) ($row['view_json'] ?? '{}'), true),
                 '_catalog_position' => (int) ($row['catalog_position'] ?? $position),
             ];
             $submittedAssignments[] = [
@@ -820,8 +820,24 @@ echo "<ul class='nav nav-tabs mb-3 brandpulse-tabs'>";
 echo "<li class='nav-item'><a class='nav-link" . ($tab === 'brand' ? ' active' : '') . "' href='" . plugin_brandpulse_h(plugin_brandpulse_config_url('brand')) . "'><i class='ti ti-palette'></i><span>" . __s('Brand', 'brandpulse') . '</span></a></li>';
 echo "<li class='nav-item'><a class='nav-link" . ($tab === 'alert' ? ' active' : '') . "' href='" . plugin_brandpulse_h(plugin_brandpulse_config_url('alert')) . "'><i class='ti ti-message-exclamation'></i><span>" . __s('Login alert', 'brandpulse') . '</span></a></li>';
 echo "<li class='nav-item'><a class='nav-link" . ($tab === 'pulse' ? ' active' : '') . "' href='" . plugin_brandpulse_h(plugin_brandpulse_config_url('pulse')) . "'><i class='ti ti-activity'></i><span>" . __s('Pulse', 'brandpulse') . '</span></a></li>';
+echo "<li class='nav-item'><a class='nav-link" . ($tab === 'features' ? ' active' : '') . "' href='" . plugin_brandpulse_h(plugin_brandpulse_config_url('features')) . "'><i class='ti ti-adjustments-horizontal'></i><span>" . __s('Features', 'brandpulse') . '</span></a></li>';
 echo "<li class='nav-item'><a class='nav-link" . ($tab === 'diagnostic' ? ' active' : '') . "' href='" . plugin_brandpulse_h(plugin_brandpulse_config_url('diagnostic')) . "'><i class='ti ti-stethoscope'></i><span>" . __s('Diagnostic', 'brandpulse') . '</span></a></li>';
 echo '</ul>';
+
+if ($tab === 'pulse') {
+    $accessRows = ProfileAccess::rows();
+    Glpi\Application\View\TemplateRenderer::getInstance()->display('@brandpulse/pulse_profiles.html.twig', [
+        'profiles' => $accessRows,
+        'allowed_count' => count(array_filter($accessRows, static fn (array $row): bool => $row['allowed'])),
+        'can_edit' => Session::haveRight('profile', UPDATE),
+        'action' => plugin_brandpulse_config_url('pulse'),
+        'profile_url' => Profile::getFormURL(),
+        'csrf_name' => plugin_brandpulse_csrf_token_name(),
+        'csrf_token' => Session::getNewCSRFToken(),
+        'selected_profile' => $selectedProfileId,
+        'access_error' => $errors !== [] && ($_POST['pulse_action'] ?? '') === 'profile_access',
+    ]);
+}
 
 echo '<form method="post" enctype="multipart/form-data" action="' . plugin_brandpulse_h(plugin_brandpulse_config_url($tab)) . '">';
 echo Html::hidden(plugin_brandpulse_csrf_token_name(), ['value' => Session::getNewCSRFToken()]);
@@ -952,15 +968,15 @@ if ($tab === 'brand') {
     echo '</div>';
     echo '</div>';
 
+    Glpi\Application\View\TemplateRenderer::getInstance()->display('@brandpulse/pulse_composition.html.twig', [
+        'mode' => $config['pulse_mode'], 'profiles' => $profiles,
+        'selected_profile' => $selectedProfileId, 'base_url' => plugin_brandpulse_config_url('pulse'),
+    ]);
+
     echo "<div class='card mb-3 brandpulse-pulse-card'>";
     echo "<div class='card-header brandpulse-pulse-toolbar'>";
     echo "<div class='brandpulse-pulse-title'><strong>" . __s('Counter catalog', 'brandpulse') . "</strong><span class='badge bg-secondary' data-pulse-row-count>" . count($counters) . '</span></div>';
     echo "<div class='brandpulse-pulse-controls'>";
-    if ($config['pulse_mode'] === 'profile') {
-        echo "<label class='brandpulse-inline-profile'><span>" . __s('GLPI profile', 'brandpulse') . '</span>';
-        echo str_replace('<select ', "<select data-pulse-profile-select data-base-url='" . plugin_brandpulse_h(plugin_brandpulse_config_url('pulse')) . "' ", plugin_brandpulse_select('profile_id', $profiles, $selectedProfileId, false));
-        echo '</label>';
-    }
     echo "<button class='btn btn-outline-secondary brandpulse-pulse-action' type='button' data-pulse-add title='" . __s('Add Pulse counter', 'brandpulse') . "' aria-label='" . __s('Add Pulse counter', 'brandpulse') . "'><i class='ti ti-plus'></i></button>";
     echo "<button class='btn btn-primary brandpulse-pulse-action' type='submit'><i class='ti ti-device-floppy'></i><span>" . __s('Save', 'brandpulse') . '</span></button>';
     echo '</div>';
@@ -970,7 +986,7 @@ if ($tab === 'brand') {
         echo "<div class='alert alert-warning mx-3 mt-3 mb-0 brandpulse-profile-right-warning' role='alert'>";
         echo "<i class='ti ti-alert-triangle' aria-hidden='true'></i><div>";
         echo '<strong>' . __s('Pulse is not authorized for this profile', 'brandpulse') . '</strong>';
-        echo '<span>' . __s('The selected counters are saved, but users will not see them until the "Display General Pulse" permission is enabled in Administration > Profiles > BrandPulse.', 'brandpulse') . '</span>';
+        echo '<span>' . __s('The selected counters are saved, but users will not see them until this profile is authorized in the profile panel above.', 'brandpulse') . '</span>';
         echo '</div></div>';
     }
 
@@ -988,6 +1004,7 @@ if ($tab === 'brand') {
     if ($config['pulse_mode'] === 'profile') {
         echo '<th>' . __s('Required', 'brandpulse') . '</th>';
     }
+    echo '<th>' . __s('Ticket view', 'brandpulse') . '</th>';
     echo '<th>' . __s('Order', 'brandpulse') . '</th>';
     echo '</tr></thead><tbody data-pulse-rows>';
 
@@ -1000,10 +1017,43 @@ if ($tab === 'brand') {
     echo '</div>';
     echo "<div class='card-footer brandpulse-catalog-footer'>";
     echo '<span class="text-muted">' . ($config['pulse_mode'] === 'profile' ? sprintf(__s('Select up to %d counters for the selected profile.', 'brandpulse'), $config['max_profile_counters']) : __s('This composition is shared by every profile authorized to display Pulse.', 'brandpulse')) . '</span>';
-    echo "<div class='brandpulse-profile-preview-counters' data-profile-counter-preview>";
-    echo '</div></div>';
+    echo '</div>';
     echo '</div>';
 
+} elseif ($tab === 'features') {
+    $assetItemtypeLabels = [
+        'NetworkEquipment' => 'Network equipment',
+        'Computer' => 'Computers',
+        'Printer' => 'Printers',
+        'Phone' => 'Phones',
+        'PDU' => 'PDUs',
+    ];
+
+    echo "<div class='brandpulse-brand-enable-panel" . ($config['asset_management_enabled'] ? ' is-enabled' : '') . "'>";
+    echo "<div><strong>" . __s('Direct equipment access', 'brandpulse') . '</strong>';
+    echo '<span>' . __s('Display a shortcut to the web interface on the main asset form, using an IP address from its network ports.', 'brandpulse') . '</span></div>';
+    echo "<div class='form-check form-switch mb-0'>";
+    echo "<input class='form-check-input' id='asset_management_enabled' type='checkbox' name='asset_management_enabled' value='1'" . ($config['asset_management_enabled'] ? ' checked' : '') . '> ';
+    echo "<label class='form-check-label' for='asset_management_enabled'>" . ($config['asset_management_enabled'] ? __s('Feature is active', 'brandpulse') : __s('Feature is inactive', 'brandpulse')) . '</label>';
+    echo '</div></div>';
+
+    echo "<div class='card mb-3 brandpulse-feature-card'>";
+    echo "<div class='card-header'><div><strong>" . __s('Web management interface', 'brandpulse') . '</strong><div class="text-muted">' . __s('Choose the preferred protocol and the asset types that show the shortcut.', 'brandpulse') . '</div></div></div>';
+    echo "<div class='card-body'>";
+    echo "<fieldset class='mb-4'><legend class='form-label'>" . __s('Preferred protocol', 'brandpulse') . '</legend>';
+    foreach (['https' => 'HTTPS', 'http' => 'HTTP'] as $scheme => $label) {
+        echo "<label class='form-check form-check-inline'><input class='form-check-input' type='radio' name='asset_management_scheme' value='" . $scheme . "'" . ($config['asset_management_scheme'] === $scheme ? ' checked' : '') . "><span class='form-check-label'>" . $label . '</span></label>';
+    }
+    echo "<div class='form-text'>" . __s('The other protocol remains available as a secondary button.', 'brandpulse') . '</div></fieldset>';
+    echo "<fieldset><legend class='form-label'>" . __s('Asset types', 'brandpulse') . '</legend>';
+    echo "<div class='brandpulse-feature-types'>";
+    foreach ($assetItemtypeLabels as $itemtype => $label) {
+        $checked = in_array($itemtype, $config['asset_management_itemtypes'], true) ? ' checked' : '';
+        echo "<label class='form-check'><input class='form-check-input' type='checkbox' name='asset_management_itemtypes[]' value='" . plugin_brandpulse_h($itemtype) . "'" . $checked . "><span class='form-check-label'>" . __s($label, 'brandpulse') . '</span></label>';
+    }
+    echo '</div></fieldset></div>';
+    echo "<div class='card-footer d-flex justify-content-end'><button class='btn btn-primary' type='submit'><i class='ti ti-device-floppy'></i><span>" . __s('Save', 'brandpulse') . '</span></button></div>';
+    echo '</div>';
 } else {
     $assetFields = plugin_brandpulse_brand_asset_fields();
 
@@ -1012,6 +1062,7 @@ if ($tab === 'brand') {
     echo "<div class='brandpulse-diagnostic-card'><strong>" . __s('Installed schema', 'brandpulse') . '</strong><span>' . plugin_brandpulse_h(BrandpulseConfig::schemaVersion() ?: __('not initialized', 'brandpulse')) . '</span></div>';
     echo "<div class='brandpulse-diagnostic-card'><strong>" . __s('Brand status', 'brandpulse') . '</strong><span>' . ($branding['enabled'] ? __s('Enabled', 'brandpulse') : __s('Disabled', 'brandpulse')) . '</span></div>';
     echo "<div class='brandpulse-diagnostic-card'><strong>" . __s('Pulse status', 'brandpulse') . '</strong><span>' . ($config['enabled'] ? __s('Enabled', 'brandpulse') : __s('Disabled', 'brandpulse')) . '</span></div>';
+    echo "<div class='brandpulse-diagnostic-card'><strong>" . __s('Direct equipment access', 'brandpulse') . '</strong><span>' . ($config['asset_management_enabled'] ? __s('Enabled', 'brandpulse') : __s('Disabled', 'brandpulse')) . '</span></div>';
     echo '</div>';
 
     echo "<div class='brandpulse-diagnostic-links'>";
@@ -1030,6 +1081,17 @@ if (in_array($tab, ['brand', 'alert'], true)) {
     echo "<div class='brandpulse-action-bar'><button class='btn btn-primary' type='submit'><i class='ti ti-device-floppy'></i><span>" . __s('Save', 'brandpulse') . '</span></button></div>';
 }
 echo '</form>';
+if ($tab === 'pulse') {
+    $viewOptions = TicketView::options();
+    $defaultColumns = $viewOptions !== []
+        ? DisplayPreference::getForTypeUser('Ticket', Session::getLoginUserID(), Session::getCurrentInterface())
+        : [];
+    Glpi\Application\View\TemplateRenderer::getInstance()->display('@brandpulse/ticket_view.html.twig', [
+        'options' => $viewOptions,
+        'default_columns' => array_values($defaultColumns),
+    ]);
+}
+
 if (in_array($tab, ['alert', 'pulse'], true)) {
     echo "<div class='brandpulse-icon-modal' data-icon-modal hidden>";
     echo "<div class='brandpulse-icon-modal-backdrop' data-icon-close></div>";

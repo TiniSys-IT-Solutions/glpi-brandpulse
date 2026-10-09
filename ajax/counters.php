@@ -25,7 +25,9 @@ try {
     Session::checkLoginUser();
 
     $service = new GlpiPlugin\Brandpulse\CounterService();
-    $payload = $service->getPayload();
+    // A page entry or completed GLPI action needs current results even inside
+    // the short polling cache TTL. Authorization remains in the service.
+    $payload = $service->getPayload(($_GET['fresh'] ?? '') === '1');
 } catch (Throwable) {
     $payload['enabled'] = false;
 } finally {

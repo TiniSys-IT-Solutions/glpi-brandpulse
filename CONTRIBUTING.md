@@ -17,10 +17,17 @@ Run the same checks as the continuous-integration workflow before submitting:
 composer install
 composer validate --no-check-publish
 composer test
+composer audit
 find . -path ./vendor -prune -o -path ./dist -prune -o -name '*.php' -print0 | xargs -0 -n1 php -l
 node --check public/js/brandpulse.js
+node --test tests/*.test.js
 php -r 'exit(simplexml_load_file("brandpulse.xml") === false ? 1 : 0);'
 ```
+
+Build an installable archive with `./scripts/build-release.sh`; the version is
+read from `setup.php`. The script compiles translations, validates XML metadata,
+copies the distribution manifest, installs production dependencies and checks
+`dist/brandpulse-VERSION.zip`. Local state and development tooling are excluded.
 
 By contributing, you agree that your contribution is licensed under
 GPL-3.0-or-later, the licence of this project.

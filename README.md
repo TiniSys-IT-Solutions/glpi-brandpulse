@@ -1,5 +1,7 @@
 # GLPI BrandPulse
 
+![Version 0.2.8](https://img.shields.io/badge/version-0.2.8-blue)
+
 ![GLPI 11](https://img.shields.io/badge/GLPI-11.x-blue)
 ![PHP 8.2+](https://img.shields.io/badge/PHP-8.2%2B-777bb4)
 ![License GPL-3.0](https://img.shields.io/badge/license-GPL--3.0--or--later-green)
@@ -13,23 +15,13 @@
 
 ### Aperçu
 
-BrandPulse regroupe quatre espaces de configuration :
+BrandPulse regroupe cinq espaces de configuration :
 
 - **Brand** : personnalisation des logos, du titre navigateur, du favicon, du fond de login et de l'identité visuelle.
 - **Login alert** : message d'information visible sur la page de connexion, avec icône, mise en forme simple et affichage extensible.
 - **Pulse** : compteurs dans le header GLPI pour suivre rapidement les tickets, les tâches ou des recherches sauvegardées.
+- **Fonctionnalités** : options complémentaires, dont l’accès direct aux interfaces web des équipements par leur adresse IP.
 - **Diagnostic** : informations utiles pour vérifier la version installée, l'état des options et les fichiers d'images importés.
-
-### Captures d'écran
-
-Les captures officielles seront ajoutées à cette section.
-
-```text
-Image à ajouter : page de configuration Brand
-Image à ajouter : onglet Login alert
-Image à ajouter : compteurs Pulse dans le header GLPI
-Image à ajouter : page de login personnalisée
-```
 
 ### Fonctionnalités Brand
 
@@ -60,8 +52,34 @@ Image à ajouter : page de login personnalisée
 - Utiliser des recherches sauvegardées GLPI pour créer des compteurs adaptés à votre organisation.
 - Définir des seuils warning et critical.
 - Régler l'intervalle de rafraîchissement.
+- Recalculer les compteurs à l'ouverture d'une page, après une sauvegarde AJAX
+  GLPI et au retour sur l'onglet ou dans l'historique, sans F5.
 - Réduire la recherche globale GLPI à une icône loupe.
 - Autoriser l'affichage de Pulse profil par profil depuis l'onglet BrandPulse des profils GLPI.
+- Ouvrir directement l'interface web d'un équipement depuis sa fiche principale,
+  à partir de l'adresse IP renseignée dans ses ports réseau (HTTPS ou HTTP).
+
+Pour personnaliser un tableau de tickets, cliquez sur l’engrenage **Vue des tickets**
+de la ligne du compteur dans l’onglet **Pulse**. Désactivez **Utiliser les préférences
+GLPI**, ajoutez les colonnes, réordonnez-les avec les flèches et choisissez le champ
+et le sens du tri. Cliquez sur **Appliquer**, puis enregistrez la configuration Pulse.
+Les colonnes fixes de GLPI restent en tête. Ces réglages appartiennent au compteur
+du catalogue et s’appliquent aux profils qui l’utilisent, sans modifier les
+préférences personnelles GLPI. Les filtres du compteur restent conservés.
+
+Le panneau **Composition du bandeau** présente les compteurs affichés et ceux
+qui restent disponibles. Ajoutez ou retirez un compteur, puis déplacez sa poignée
+ou utilisez les flèches : sa nouvelle position est mise en évidence dans le
+panneau et le catalogue. L’aperçu du bandeau suit les noms, couleurs, icônes et
+l’ordre ; ses valeurs sont des exemples. En mode par profil, sélectionnez le
+profil dans ce panneau. Le changement de profil protège les modifications non
+enregistrées. Enregistrez la configuration Pulse pour appliquer les changements.
+
+Le panneau repliable **Profils autorisés à afficher Pulse** permet de consulter
+et modifier le droit natif **Afficher Pulse général**. Sa modification exige aussi
+le droit GLPI de modifier les profils. Son bouton d’enregistrement ne modifie pas
+les compositions. Les autorisations ne donnent aucun droit supplémentaire sur les
+tickets ; les restrictions du mode libre-service restent applicables.
 
 ### Visibilité de Pulse selon le profil
 
@@ -128,6 +146,14 @@ pour le modèle des routes, des droits et des données.
 Les correctifs et améliorations ciblés sont les bienvenus. Consultez le
 [guide de contribution](CONTRIBUTING.md) avant d'ouvrir une pull request.
 
+### Développement et build
+
+Le [guide de contribution](CONTRIBUTING.md) décrit les contrôles PHP, JavaScript,
+Composer et les traductions. Construisez le package avec
+`./scripts/build-release.sh` : la version est lue depuis `setup.php` et le résultat
+est `dist/brandpulse-0.2.8.zip`, avec le dossier installable `dist/brandpulse/`.
+Les fichiers locaux et les outils de développement sont exclus du ZIP.
+
 ### Inspirations et crédits
 
 BrandPulse s'appuie sur l'expérience acquise avec plusieurs personnalisations
@@ -151,23 +177,13 @@ GPL-3.0-or-later.
 
 ### Overview
 
-BrandPulse brings branding and operational visibility into one GLPI plugin:
+BrandPulse brings branding and operational visibility into one GLPI plugin with five configuration areas:
 
 - **Brand**: customise logos, browser title, favicon, login background and visual identity.
 - **Login alert**: show a styled information message on the login page, with an icon and simple formatting.
 - **Pulse**: add quick counters to the GLPI header for tickets, tasks or saved searches.
+- **Features**: configure additional tools, including direct access to asset web interfaces through their IP address.
 - **Diagnostic**: check the installed version, enabled features and imported image files.
-
-### Screenshots
-
-Official screenshots will be added to this section.
-
-```text
-Image to add: Brand configuration page
-Image to add: Login alert tab
-Image to add: Pulse counters in the GLPI header
-Image to add: customised login page
-```
 
 ### Brand Features
 
@@ -198,8 +214,31 @@ Image to add: customised login page
 - Use GLPI saved searches to create counters that match your organisation.
 - Define warning and critical thresholds.
 - Set the refresh interval.
+- Recompute counters on page entry, after GLPI AJAX saves and when returning
+  to the tab or a page restored from history, without reloading the page.
 - Collapse the global GLPI search field into a magnifier icon.
 - Allow General Pulse visibility profile by profile from the BrandPulse tab in GLPI profiles.
+- Open an asset's web management interface directly from its main form, using
+  the IP address recorded on its network ports (HTTPS or HTTP).
+
+Use the **Ticket view** gear on a counter row in the **Pulse** tab to configure its
+ticket table. Turn off **Use GLPI preferences**, add and reorder columns, and
+choose the sorting field and direction. Click **Apply**, then save the Pulse
+configuration. GLPI keeps its fixed columns first. Settings belong to the counter
+catalogue and apply to profiles using that counter without changing personal GLPI
+preferences. Counter filters remain in place.
+
+The **Header composition** panel separates displayed and available counters.
+Add or remove counters, then reorder them using drag handles or keyboard-accessible
+arrows. A moved counter is highlighted in both the panel and catalogue. The header
+preview follows labels, colors, icons and order, with sample counts. In profile
+mode, select the profile in this panel; unsaved changes are protected. Save the
+Pulse configuration to apply the composition.
+
+The collapsible **Profiles authorized to display Pulse** panel manages the existing
+native **Display General Pulse** right. Changing it also requires native profile
+UPDATE permission. Its Save button does not modify counter compositions. Pulse
+authorization grants no ticket rights; self-service mode restrictions still apply.
 
 ### Profile-based Pulse visibility
 
@@ -264,6 +303,13 @@ permission and data models.
 
 Focused fixes and improvements are welcome. Read the
 [contribution guide](CONTRIBUTING.md) before opening a pull request.
+
+### Development and Build
+
+The [contribution guide](CONTRIBUTING.md) documents PHP, JavaScript, Composer
+and translation checks. Run `./scripts/build-release.sh` to build the version
+from `setup.php` as `dist/brandpulse-0.2.8.zip` and `dist/brandpulse/`.
+Local files and development tooling are excluded from the archive.
 
 ### Inspirations and credits
 

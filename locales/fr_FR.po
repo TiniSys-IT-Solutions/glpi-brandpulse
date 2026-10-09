@@ -1,6 +1,6 @@
 msgid ""
 msgstr ""
-"Project-Id-Version: GLPI BrandPulse 0.2.3\n"
+"Project-Id-Version: GLPI BrandPulse 0.2.8\n"
 "Report-Msgid-Bugs-To: https://github.com/TiniSys-IT-Solutions/glpi-brandpulse/issues\n"
 "POT-Creation-Date: 2026-08-10 00:00+0000\n"
 "PO-Revision-Date: 2026-08-10 00:00+0000\n"
@@ -677,3 +677,234 @@ msgstr "Pulse n’est pas autorisé pour ce profil"
 
 msgid "The selected counters are saved, but users will not see them until the \"Display General Pulse\" permission is enabled in Administration > Profiles > BrandPulse."
 msgstr "Les compteurs sélectionnés sont enregistrés, mais les utilisateurs ne les verront pas tant que le droit « Afficher Pulse général » ne sera pas activé dans Administration > Profils > BrandPulse."
+
+msgid "Open the management interface"
+msgstr "Ouvrir l’interface d’administration"
+
+msgid "Open the management interface over HTTPS"
+msgstr "Ouvrir l’interface d’administration en HTTPS"
+
+msgid "Open the interface"
+msgstr "Ouvrir l’interface"
+
+msgid "Open over HTTP"
+msgstr "Ouvrir en HTTP"
+
+msgid "BrandPulse asset management link unavailable"
+msgstr "Le lien d’administration BrandPulse est indisponible"
+
+msgid "Features"
+msgstr "Fonctionnalités"
+
+msgid "Feature settings updated."
+msgstr "Les paramètres des fonctionnalités ont été mis à jour."
+
+msgid "Direct equipment access"
+msgstr "Accès direct aux équipements"
+
+msgid "Display a shortcut to the web interface on the main asset form, using an IP address from its network ports."
+msgstr "Afficher un raccourci vers l’interface web sur la fiche principale de l’asset, en utilisant une adresse IP de ses ports réseau."
+
+msgid "Feature is active"
+msgstr "Fonctionnalité active"
+
+msgid "Feature is inactive"
+msgstr "Fonctionnalité inactive"
+
+msgid "Web management interface"
+msgstr "Interface web d’administration"
+
+msgid "Choose the preferred protocol and the asset types that show the shortcut."
+msgstr "Choisissez le protocole préféré et les types d’assets qui affichent le raccourci."
+
+msgid "Preferred protocol"
+msgstr "Protocole préféré"
+
+msgid "The other protocol remains available as a secondary button."
+msgstr "L’autre protocole reste disponible dans un bouton secondaire."
+
+msgid "Asset types"
+msgstr "Types d’assets"
+
+msgid "Network equipment"
+msgstr "Équipements réseau"
+
+msgid "Computers"
+msgstr "Ordinateurs"
+
+msgid "Printers"
+msgstr "Imprimantes"
+
+msgid "Phones"
+msgstr "Téléphones"
+
+msgid "PDUs"
+msgstr "PDU"
+
+msgid "Open the management interface over"
+msgstr "Ouvrir l’interface d’administration en"
+
+msgid "Open over"
+msgstr "Ouvrir en"
+
+msgid "Configure ticket view"
+msgstr "Configurer la vue des tickets"
+
+msgid "GLPI preferences"
+msgstr "Préférences GLPI"
+
+msgid "Custom view"
+msgstr "Vue personnalisée"
+
+msgid "Ticket view"
+msgstr "Vue des tickets"
+
+msgid "Use GLPI preferences"
+msgstr "Utiliser les préférences GLPI"
+
+msgid "These settings apply to this Pulse link. Personal ticket display preferences remain unchanged."
+msgstr "Ces réglages s’appliquent au lien de ce compteur Pulse. Les préférences personnelles d’affichage des tickets sont conservées."
+
+msgid "Ticket fields are unavailable with your current permissions."
+msgstr "Les champs des tickets ne sont pas disponibles avec vos droits actuels."
+
+msgid "Columns and order"
+msgstr "Colonnes et ordre"
+
+msgid "GLPI keeps its fixed columns first. Reorder the other columns below."
+msgstr "GLPI conserve ses colonnes fixes en premier. Réordonnez les autres colonnes ci-dessous."
+
+msgid "Fixed column"
+msgstr "Colonne fixe"
+
+msgid "Add a column"
+msgstr "Ajouter une colonne"
+
+msgid "Add"
+msgstr "Ajouter"
+
+msgid "Sort by"
+msgstr "Trier par"
+
+msgid "Keep the default or saved-search sort"
+msgstr "Conserver le tri par défaut ou celui de la recherche sauvegardée"
+
+msgid "Sort direction"
+msgstr "Sens du tri"
+
+msgid "Ascending"
+msgstr "Croissant"
+
+msgid "Descending"
+msgstr "Décroissant"
+
+msgid "Apply, then save the Pulse configuration."
+msgstr "Appliquez, puis enregistrez la configuration Pulse."
+
+msgid "Cancel"
+msgstr "Annuler"
+
+msgid "Apply"
+msgstr "Appliquer"
+
+msgid "Remove column"
+msgstr "Retirer la colonne"
+
+msgid "Profiles authorized to display Pulse"
+msgstr "Profils autorisés à afficher Pulse"
+
+msgid "This is the native Display General Pulse permission. Counter assignments are configured separately below."
+msgstr "Il s’agit du droit natif Afficher Pulse général. L’affectation des compteurs se configure séparément ci-dessous."
+
+msgid "You do not have permission to modify GLPI profiles."
+msgstr "Vous n’avez pas le droit de modifier les profils GLPI."
+
+msgid "Interface"
+msgstr "Interface"
+
+msgid "Display Pulse"
+msgstr "Afficher Pulse"
+
+msgid "Actions"
+msgstr "Actions"
+
+msgid "Standard interface"
+msgstr "Interface standard"
+
+msgid "Self-service interface"
+msgstr "Interface libre-service"
+
+msgid "Authorized"
+msgstr "Autorisé"
+
+msgid "Pulse not visible"
+msgstr "Pulse non visible"
+
+msgid "Open profile"
+msgstr "Ouvrir le profil"
+
+msgid "Self-service profiles also require the appropriate Pulse display mode. Authorizing Pulse does not grant access to tickets."
+msgstr "Les profils libre-service nécessitent également un mode d’affichage Pulse adapté. Autoriser Pulse ne donne pas accès aux tickets."
+
+msgid "Save profile permissions"
+msgstr "Enregistrer les autorisations des profils"
+
+msgid "Header composition"
+msgstr "Composition du bandeau"
+
+msgid "Shared composition"
+msgstr "Composition partagée"
+
+msgid "Displayed counters"
+msgstr "Compteurs affichés"
+
+msgid "Drag a handle to reorder counters, or use the arrows. Preview values are examples."
+msgstr "Déplacez les compteurs avec leur poignée ou utilisez les flèches. Les valeurs de l’aperçu sont des exemples."
+
+msgid "Available counters"
+msgstr "Compteurs disponibles"
+
+msgid "No pending changes."
+msgstr "Aucune modification en attente."
+
+msgid "Save Pulse configuration"
+msgstr "Enregistrer la configuration Pulse"
+
+msgid "Drag to reorder"
+msgstr "Faire glisser pour réordonner"
+
+msgid "Unsaved changes."
+msgstr "Modifications non enregistrées."
+
+msgid "Position"
+msgstr "Position"
+
+msgid "No displayed counters."
+msgstr "Aucun compteur affiché."
+
+msgid "All counters are displayed."
+msgstr "Tous les compteurs sont affichés."
+
+msgid "Remove"
+msgstr "Retirer"
+
+msgid "Profile permission changes have not been saved. Continue without saving them?"
+msgstr "Les modifications des autorisations des profils ne sont pas enregistrées. Continuer sans les enregistrer ?"
+
+msgid "Pulse composition changes have not been saved. Continue without saving them?"
+msgstr "Les modifications de la composition Pulse ne sont pas enregistrées. Continuer sans les enregistrer ?"
+
+msgid "Unsaved changes will be lost when changing profile. Continue?"
+msgstr "Le changement de profil supprimera les modifications non enregistrées. Continuer ?"
+
+msgid "Pulse profile permissions updated."
+msgstr "Autorisations Pulse des profils mises à jour."
+
+msgid "A selected profile is unavailable or cannot be modified."
+msgstr "Un profil sélectionné est indisponible ou ne peut pas être modifié."
+
+msgid "Unable to save Pulse profile permissions."
+msgstr "Impossible d’enregistrer les autorisations Pulse des profils."
+
+msgid "The selected counters are saved, but users will not see them until this profile is authorized in the profile panel above."
+msgstr "Les compteurs sélectionnés sont enregistrés, mais ils ne seront visibles qu’après autorisation de ce profil dans le panneau des profils ci-dessus."

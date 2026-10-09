@@ -19,7 +19,8 @@ final class CounterServiceTest extends TestCase
     protected function tearDown(): void
     {
         unset($_SESSION['glpiactiveprofile'], $_SESSION['glpiactiveentities'], $_SESSION['glpiactive_entity_recursive']);
-        unset($GLOBALS['DB']);
+        unset($_SESSION['glpilanguage']);
+        unset($GLOBALS['DB'], $GLOBALS['GLPI_CACHE']);
         \Config::$values = [];
         Session::$brandpulseRight = true;
         Session::$interface = 'central';
@@ -114,6 +115,44 @@ final class CounterServiceTest extends TestCase
             $baseline,
             $this->cacheKey(new CounterService(10), [['key' => 'my_open_tickets', 'enabled' => true]])
         );
+    }
+
+    public function testCacheSeparatesLanguagesAndChangesToProfileRights(): void
+    {
+        $_SESSION['glpiactiveprofile'] = ['id' => 4, 'ticket' => 1];
+        $_SESSION['glpilanguage'] = 'fr_FR';
+        $definitions = [['key' => 'my_tasks', 'enabled' => true]];
+        $baseline = $this->cacheKey(new CounterService(10), $definitions);
+
+        $_SESSION['glpilanguage'] = 'en_GB';
+        self::assertNotSame($baseline, $this->cacheKey(new CounterService(10), $definitions));
+        $_SESSION['glpilanguage'] = 'fr_FR';
+        $_SESSION['glpiactiveprofile']['ticket'] = 0;
+        self::assertNotSame($baseline, $this->cacheKey(new CounterService(10), $definitions));
+    }
+
+    public function testFreshRequestRecomputesAndReplacesCachedCounters(): void
+    {
+        $_SESSION['glpiactiveprofile']['id'] = 4;
+        \Config::$values[Config::CONTEXT]['counters_json'] = json_encode(
+            [Config::defaultCounters()[0]], JSON_THROW_ON_ERROR
+        );
+        $cache = new class {
+            public array $value = [['key' => 'my_tasks', 'count' => 9]];
+            public int $reads = 0;
+            public function get(string $key): array { ++$this->reads; return $this->value; }
+            public function set(string $key, array $value, int $ttl): void { $this->value = $value; }
+        };
+        $GLOBALS['GLPI_CACHE'] = $cache;
+        $service = new CounterService(10);
+        self::assertSame(9, $service->getPayload()['counters'][0]['count']);
+        self::assertSame(0, $service->getPayload(true)['counters'][0]['count']);
+        self::assertSame(1, $cache->reads);
+        self::assertSame(0, $cache->value[0]['count']);
+
+        Session::$brandpulseRight = false;
+        self::assertFalse($service->getPayload(true)['enabled']);
+        self::assertSame(1, $cache->reads);
     }
 
     private function cacheKey(CounterService $service, array $definitions): string

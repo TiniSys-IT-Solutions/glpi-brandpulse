@@ -18,7 +18,7 @@ final class CounterService
         $this->userId = $userId ?? (int) ($_SESSION['glpiID'] ?? 0);
     }
 
-    public function getPayload(): array
+    public function getPayload(bool $fresh = false): array
     {
         $config = Config::values();
         $profileId = (int) ($_SESSION['glpiactiveprofile']['id'] ?? 0);
@@ -54,13 +54,13 @@ final class CounterService
                     PulseResolver::defaultAssignments($config['counters']),
                     [],
                     $config['max_profile_counters']
-                )),
+                ), $fresh),
         ];
     }
 
-    private function getCounters(array $definitions): array
+    private function getCounters(array $definitions, bool $fresh = false): array
     {
-        $cached = $this->getCachedCounters($definitions);
+        $cached = $fresh ? null : $this->getCachedCounters($definitions);
         if ($cached !== null) {
             return $cached;
         }
@@ -109,10 +109,10 @@ final class CounterService
         }
 
         if (($definition['source_type'] ?? 'preset') === 'saved_search') {
-            return $this->savedSearchUrl((int) ($definition['savedsearches_id'] ?? 0));
+            return $this->savedSearchUrl((int) ($definition['savedsearches_id'] ?? 0), $definition['view'] ?? []);
         }
 
-        return $this->searchUrl('Ticket', $this->presetSearchParams((string) ($definition['key'] ?? '')));
+        return $this->searchUrl('Ticket', $this->presetSearchParams((string) ($definition['key'] ?? '')), $definition['view'] ?? []);
     }
 
     private function countSavedSearch(int $savedSearchId): int
@@ -126,7 +126,7 @@ final class CounterService
         return $this->countSearch($search['itemtype'], $search['params']);
     }
 
-    private function savedSearchUrl(int $savedSearchId): string
+    private function savedSearchUrl(int $savedSearchId, array $view = []): string
     {
         $search = $this->savedSearchData($savedSearchId);
 
@@ -134,7 +134,7 @@ final class CounterService
             return '#';
         }
 
-        return $this->searchUrl($search['itemtype'], $search['params']);
+        return $this->searchUrl($search['itemtype'], $search['params'], $view);
     }
 
     private function savedSearchData(int $savedSearchId): ?array
@@ -165,7 +165,8 @@ final class CounterService
 
     private function countSearch(string $itemtype, array $params): int
     {
-        if ($params === [] || !class_exists(\Search::class)) {
+        if ($params === [] || !class_exists(\Search::class)
+            || !is_subclass_of($itemtype, \CommonDBTM::class) || !$itemtype::canView()) {
             return 0;
         }
 
@@ -242,7 +243,7 @@ final class CounterService
         };
     }
 
-    private function searchUrl(string $itemtype, array $params): string
+    private function searchUrl(string $itemtype, array $params, array $view = []): string
     {
         global $CFG_GLPI;
 
@@ -259,6 +260,17 @@ final class CounterService
             'sort' => [0 => 19],
             'order' => [0 => 'DESC'],
         ], $params);
+
+        // Presentation only affects navigation, never the counter query or
+        // persistent DisplayPreference records. Reset avoids a preceding view's
+        // search-session state leaking into this one.
+        $params = array_replace($params, TicketView::parameters($view, $itemtype));
+        $params['reset'] = 'reset';
+        if (isset($params['forcetoview']) && $params['forcetoview'] === []) {
+            // PHP omits empty arrays from query strings. A zero sentinel keeps
+            // the native forced-view mode active with only GLPI's fixed columns.
+            $params['forcetoview'] = [0];
+        }
 
         $path = '/front/ticket.php';
         if (class_exists($itemtype) && method_exists($itemtype, 'getSearchURL')) {
@@ -378,6 +390,8 @@ final class CounterService
         $context = [
             'user' => $this->userId,
             'profile' => (int) ($_SESSION['glpiactiveprofile']['id'] ?? 0),
+            'rights' => (array) ($_SESSION['glpiactiveprofile'] ?? []),
+            'language' => (string) ($_SESSION['glpilanguage'] ?? ''),
             'entities' => array_values((array) ($_SESSION['glpiactiveentities'] ?? [])),
             'recursive' => (int) ($_SESSION['glpiactive_entity_recursive'] ?? 0),
             'definitions' => $definitions,

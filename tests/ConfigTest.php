@@ -31,6 +31,19 @@ final class ConfigTest extends TestCase
         self::assertSame('global', Config::values()['pulse_mode']);
     }
 
+    public function testAssetManagementDefaultsAndSubmittedValuesAreNormalized(): void
+    {
+        $defaults = Config::values();
+        self::assertTrue($defaults['asset_management_enabled']);
+        self::assertSame('https', $defaults['asset_management_scheme']);
+        self::assertContains('NetworkEquipment', $defaults['asset_management_itemtypes']);
+
+        Config::saveAssetManagement(true, 'http', ['Printer', 'User', 'Printer']);
+        $saved = Config::values();
+        self::assertSame('http', $saved['asset_management_scheme']);
+        self::assertSame(['Printer'], $saved['asset_management_itemtypes']);
+    }
+
     public function testBrandingIsNormalizedAndLegacyLogosRemainCompatible(): void
     {
         $branding = Config::normalizeBranding([
@@ -66,6 +79,16 @@ final class ConfigTest extends TestCase
             '/plugins/brandpulse/front/asset.php?file=logo.svg',
             $branding['logo_sidebar_collapsed_dark']
         );
+    }
+
+    public function testMalformedAssetUrlsAreRejected(): void
+    {
+        foreach (['http://', 'https:logo.svg', 'https:///logo.svg', '/\\example.test/logo.svg',
+                  'http://example.test:invalid/logo.svg'] as $reference) {
+            self::assertSame('', Config::normalizeBranding(['favicon' => $reference])['favicon']);
+        }
+        self::assertSame('//example.test/logo.svg',
+            Config::normalizeBranding(['favicon' => '//example.test/logo.svg'])['favicon']);
     }
 
     public function testSavedSearchCounterGetsStableKeyAndSafeValues(): void

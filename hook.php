@@ -28,6 +28,36 @@ function plugin_brandpulse_clear_translation_cache(): void
     }
 }
 
+/**
+ * Provide a stable GLPI-owned insertion point at the beginning of supported
+ * asset forms. The frontend fills it only when a usable network IP exists.
+ *
+ * @param array{item?: mixed, options?: array} $params
+ */
+function plugin_brandpulse_pre_item_form(array $params): void
+{
+    plugin_brandpulse_require_autoload();
+
+    $item = $params['item'] ?? null;
+    if (!$item instanceof CommonDBTM || $item->isNewItem() || !$item->can($item->getID(), READ)) {
+        return;
+    }
+
+    $itemtype = $item::getType();
+    $config = GlpiPlugin\Brandpulse\Config::values();
+    if (
+        !$config['asset_management_enabled']
+        || !in_array($itemtype, $config['asset_management_itemtypes'], true)
+    ) {
+        return;
+    }
+
+    echo '<div class="brandpulse-asset-management-slot"'
+        . ' data-brandpulse-asset-management-slot'
+        . ' data-itemtype="' . htmlspecialchars($itemtype, ENT_QUOTES | ENT_SUBSTITUTE, 'UTF-8') . '"'
+        . ' data-items-id="' . (int) $item->getID() . '"></div>';
+}
+
 function plugin_brandpulse_install(): bool
 {
     plugin_brandpulse_require_autoload();

@@ -3,6 +3,41 @@
   --brandpulse-gap: 0.55rem;
 }
 
+.brandpulse-asset-management-slot {
+  display: none;
+}
+
+.brandpulse-asset-management-slot.is-available {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  min-height: 3.25rem;
+  padding: 0.65rem clamp(1rem, 24vw, 25rem) 0.65rem 1rem;
+  border-bottom: 1px solid var(--tblr-border-color, #d9dfe7);
+}
+
+.brandpulse-asset-management {
+  white-space: nowrap;
+}
+
+.brandpulse-asset-management .btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+}
+
+@media (max-width: 1200px) {
+  .brandpulse-asset-management-slot.is-available {
+    padding-inline-end: 1rem;
+  }
+}
+
+.brandpulse-feature-types {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(12rem, 1fr));
+  gap: 0.75rem 1.5rem;
+}
+
 #brandpulse-header-counters.brandpulse-counters {
   display: inline-flex;
   align-items: center;
@@ -1199,4 +1234,47 @@ section.brandpulse-brand-section > .form-check {
   .brandpulse-brand-section {
     scroll-margin-top: 7rem;
   }
+}
+
+.brandpulse-profile-access > summary { cursor: pointer; }
+.brandpulse-composition-list { display: grid; gap: .5rem; }
+.brandpulse-composition-item {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: .5rem;
+  padding: .5rem .75rem;
+  border: 1px solid var(--tblr-border-color, #d9dee3);
+  border-radius: .375rem;
+  background: var(--tblr-bg-surface, #fff);
+}
+.brandpulse-composition-label { flex: 1; min-width: 10rem; }
+[data-pulse-drag] { cursor: grab; touch-action: pan-y; }
+[data-pulse-drag]:active { cursor: grabbing; }
+.brandpulse-row-dragging { opacity: .5; }
+.brandpulse-row-moved {
+  outline: 2px solid var(--tblr-primary, #206bc4);
+  outline-offset: -2px;
+  background-color: var(--tblr-primary-lt, #e8f0fb);
+}
+.brandpulse-pulse-table .brandpulse-row-moved > td {
+  background-color: var(--tblr-primary-lt, #e8f0fb);
+}
+.brandpulse-composition-preview {
+  padding: 1rem;
+  border: 1px solid var(--tblr-border-color, #d9dee3);
+  border-radius: .375rem;
+  background: var(--tblr-bg-surface-secondary, #f6f8fa);
+}
+.brandpulse-composition-preview .brandpulse-profile-preview-counters { margin-top: .5rem; }
+.brandpulse-composition-save {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: .5rem;
+  position: sticky;
+  bottom: 0;
+  z-index: 5;
+  background: var(--tblr-bg-surface, #fff);
 }

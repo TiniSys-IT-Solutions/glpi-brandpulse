@@ -12,6 +12,7 @@
   };
   const pluginBaseUrl = detectPluginBaseUrl();
   const countersEndpoint = pluginBaseUrl + '/ajax/counters.php';
+  const assetManagementEndpoint = pluginBaseUrl + '/ajax/asset-management-link.php';
   const brandingEndpoint = pluginBaseUrl + '/ajax/branding.php';
   const iconIndexEndpoint = pluginBaseUrl + '/ajax/icons.php';
   const iconStaticIndexEndpoint = pluginBaseUrl + '/icons/pulse/index.json';
@@ -21,7 +22,12 @@
   const isHtmlDocument = () => document.contentType.toLowerCase().includes('html')
     && document.documentElement?.nodeName?.toLowerCase() === 'html';
   let refreshTimer = null;
-  const brandingCacheKey = 'brandpulse:branding-payload:v1';
+  let countersLoading = false;
+  let freshRefreshPending = false;
+  let lastRefreshPayload = { refresh_interval: 60 };
+  let counterRefreshReady = false;
+  let assetManagementObserver = null;
+  const brandingCacheKey = 'brandpulse:branding-payload:v2:' + pluginBaseUrl;
   const brandingCacheMaxAge = 30 * 60 * 1000;
 
   const cacheStorage = () => {
@@ -535,6 +541,7 @@
     document.querySelector('[data-pulse-row-count]')?.replaceChildren(String(count));
 
     rows.forEach((row, index) => {
+      row.querySelector('[data-pulse-position]')?.replaceChildren(String(index + 1));
       const up = row.querySelector('[data-pulse-move="up"]');
       const down = row.querySelector('[data-pulse-move="down"]');
       if (up) {
@@ -574,7 +581,7 @@
 
     tbody.append(row);
     syncPulseTargetRow(row.querySelector('[data-pulse-source]'));
-    refreshPulseOrderControls();
+    pulseChanged(row);
   };
 
   const setupPulseTableControls = () => {
@@ -600,80 +607,257 @@
         row.nextElementSibling.after(row);
       }
 
-      refreshPulseOrderControls();
+      pulseChanged(row);
     });
 
     table.closest('form')?.addEventListener('submit', renumberPulseRows);
     refreshPulseOrderControls();
   };
 
-  const profileCounterRows = () => pulseRows();
+  let pulseDirty = false;
+  let movedPulseRow = null;
+  let movedPulseTimer = null;
+  const activePulseRows = () => pulseRows().filter((row) =>
+    row.querySelector('[data-profile-active], [data-global-active]')?.checked);
+  const pulseRowLabel = (row) => row.querySelector('[name$="[label]"]')?.value || row.dataset.counterLabel || t('Counter');
+  const pulseButton = (text, action, title = text) => {
+    const button = document.createElement('button');
+    button.type = 'button';
+    button.className = 'btn btn-sm btn-outline-secondary';
+    button.textContent = text;
+    button.dataset.pulseComposeAction = action;
+    button.title = title;
+    button.setAttribute('aria-label', title);
+    return button;
+  };
+  const markPulseDirty = () => {
+    pulseDirty = true;
+    const status = document.querySelector('[data-pulse-dirty-status]');
+    if (status) {
+      status.textContent = t('Unsaved changes.');
+      status.classList.remove('text-muted');
+      status.classList.add('text-warning');
+    }
+  };
+  const pulseChanged = (row = null) => {
+    markPulseDirty();
+    if (row) {
+      movedPulseRow?.classList.remove('brandpulse-row-moved');
+      movedPulseRow = row;
+      row.classList.add('brandpulse-row-moved');
+      window.clearTimeout(movedPulseTimer);
+      movedPulseTimer = window.setTimeout(() => {
+        movedPulseRow?.classList.remove('brandpulse-row-moved');
+        movedPulseRow = null;
+        document.querySelectorAll('.brandpulse-row-moved').forEach((item) => item.classList.remove('brandpulse-row-moved'));
+      }, 1800);
+    }
+    refreshPulseOrderControls();
+    if (row) {
+      const position = activePulseRows().indexOf(row);
+      const announcement = document.querySelector('[data-pulse-move-announcement]');
+      if (announcement && position >= 0) {
+        announcement.textContent = pulseRowLabel(row) + ' — ' + t('Position') + ' ' + (position + 1);
+      }
+    }
+  };
 
   const syncProfileCounterRows = () => {
-    const rows = profileCounterRows();
-    rows.forEach((row, index) => {
+    const rows = pulseRows();
+    rows.forEach((row) => {
       const active = row.querySelector('[data-profile-active], [data-global-active]');
       const mandatory = row.querySelector('[data-profile-mandatory]');
       if (mandatory) {
         mandatory.disabled = !active?.checked;
-        if (!active?.checked) {
-          mandatory.checked = false;
-        }
+        if (!active?.checked) mandatory.checked = false;
       }
-
     });
-
-    const preview = document.querySelector('[data-profile-counter-preview]');
-    const configuredLimit = Number(document.querySelector('[data-profile-counter-limit]')?.value || 6);
-    const activeRows = rows
-      .filter((row) => row.querySelector('[data-profile-active], [data-global-active]')?.checked)
-      .slice(0, Math.max(6, Math.min(10, configuredLimit)));
-    if (preview) {
-      preview.replaceChildren();
-      if (activeRows.length === 0) {
+    const limit = Math.max(6, Math.min(10, Number(document.querySelector('[data-profile-counter-limit]')?.value || 6)));
+    const activeRows = activePulseRows();
+    const count = document.querySelector('[data-pulse-active-count]');
+    if (count) {
+      count.textContent = activeRows.length + ' / ' + limit;
+      count.classList.toggle('text-danger', activeRows.length > limit);
+    }
+    for (const [selector, selected] of [['[data-pulse-composition-active]', true], ['[data-pulse-composition-available]', false]]) {
+      const container = document.querySelector(selector);
+      if (!container) continue;
+      container.replaceChildren();
+      const selectedRows = selected ? activeRows : rows.filter((row) => !activeRows.includes(row));
+      if (!selectedRows.length) {
         const empty = document.createElement('span');
         empty.className = 'text-muted';
-        empty.textContent = t('No counter is enabled for this profile.');
-        preview.append(empty);
-      } else {
-        for (const row of activeRows) {
-          const item = document.createElement('span');
-          item.className = 'brandpulse-profile-preview-counter';
-
-          const icon = document.createElement('span');
-          icon.className = 'brandpulse-icon-preview';
-          icon.setAttribute('aria-hidden', 'true');
-          icon.style.webkitMaskImage = 'url("' + String(row.dataset.counterIconUrl || '') + '")';
-          icon.style.maskImage = 'url("' + String(row.dataset.counterIconUrl || '') + '")';
-          item.append(icon, document.createTextNode(String(row.dataset.counterLabel || '')));
-
-          if (row.querySelector('[data-profile-mandatory]')?.checked) {
-            const lock = document.createElement('i');
-            lock.className = 'ti ti-lock';
-            lock.setAttribute('aria-label', t('Required'));
-            item.append(lock);
-          }
-          preview.append(item);
+        empty.textContent = t(selected ? 'No displayed counters.' : 'All counters are displayed.');
+        container.append(empty);
+      }
+      selectedRows.forEach((row, index) => {
+        const item = document.createElement('div');
+        item.className = 'brandpulse-composition-item';
+        item.classList.toggle('brandpulse-row-moved', row === movedPulseRow);
+        item.dataset.pulseRowIndex = String(rows.indexOf(row));
+        if (selected) {
+          const drag = pulseButton('↕', 'drag', t('Drag to reorder') + ' — ' + pulseRowLabel(row));
+          drag.draggable = true;
+          drag.setAttribute('data-pulse-drag', '');
+          item.append(drag);
         }
+        const label = document.createElement('span');
+        label.className = 'brandpulse-composition-label';
+        label.textContent = (selected ? (index + 1) + '. ' : '') + pulseRowLabel(row);
+        item.append(label);
+        if (selected) {
+          if (row.querySelector('[data-profile-mandatory]')?.checked) {
+            const badge = document.createElement('span');
+            badge.className = 'badge bg-secondary';
+            badge.textContent = t('Required');
+            item.append(badge);
+          }
+          const up = pulseButton('↑', 'up', t('Move up') + ' — ' + pulseRowLabel(row));
+          const down = pulseButton('↓', 'down', t('Move down') + ' — ' + pulseRowLabel(row));
+          up.disabled = index === 0;
+          down.disabled = index === selectedRows.length - 1;
+          item.append(up, down, pulseButton(t('Remove'), 'remove', t('Remove') + ' — ' + pulseRowLabel(row)));
+        } else {
+          const add = pulseButton(t('Add'), 'add', t('Add') + ' — ' + pulseRowLabel(row));
+          add.disabled = activeRows.length >= limit;
+          item.append(add);
+        }
+        container.append(item);
+      });
+    }
+    const preview = document.querySelector('[data-profile-counter-preview]');
+    if (preview) {
+      preview.replaceChildren();
+      if (!activeRows.length) {
+        const empty = document.createElement('span');
+        empty.className = 'text-muted';
+        empty.textContent = t('No displayed counters.');
+        preview.append(empty);
+      }
+      for (const row of activeRows.slice(0, limit)) {
+        const item = document.createElement('span');
+        item.className = 'brandpulse-profile-preview-counter';
+        const icon = document.createElement('span');
+        icon.className = 'brandpulse-icon-preview';
+        icon.setAttribute('aria-hidden', 'true');
+        const iconValue = row.querySelector('[data-icon-value]')?.value;
+        const iconUrl = iconValue ? resolveIconUrl(iconValue) : row.dataset.counterIconUrl || '';
+        icon.style.webkitMaskImage = 'url("' + iconUrl + '")';
+        icon.style.maskImage = 'url("' + iconUrl + '")';
+        const color = row.querySelector('[name$="[color]"]')?.value;
+        if (color) icon.style.backgroundColor = color;
+        item.append(icon, document.createTextNode('12 · ' + pulseRowLabel(row)));
+        if (row.querySelector('[data-profile-mandatory]')?.checked) {
+          const lock = document.createElement('i');
+          lock.className = 'ti ti-lock';
+          lock.setAttribute('aria-label', t('Required'));
+          item.append(lock);
+        }
+        preview.append(item);
       }
     }
-
   };
 
   const setupProfileCounterControls = () => {
     const table = document.querySelector('[data-pulse-table]');
-    table?.addEventListener('change', (event) => {
-      if (event.target.matches('[data-profile-active], [data-global-active], [data-profile-mandatory]')) {
-        syncProfileCounterRows();
+    if (!table || table.dataset.compositionReady) return;
+    table.dataset.compositionReady = '1';
+    const form = table.closest('form');
+    let submitting = false;
+    let accessDirty = false;
+    form?.addEventListener('input', () => { markPulseDirty(); syncProfileCounterRows(); });
+    form?.addEventListener('change', () => { markPulseDirty(); syncProfileCounterRows(); });
+    form?.addEventListener('submit', (event) => {
+      if (accessDirty && !window.confirm(t('Profile permission changes have not been saved. Continue without saving them?'))) {
+        event.preventDefault();
+        return;
       }
+      submitting = true;
     });
-
+    const accessForm = document.querySelector('[data-pulse-access-form]');
+    accessForm?.addEventListener('change', (event) => {
+      accessDirty = true;
+      const label = event.target.closest('label')?.querySelector('.form-check-label');
+      if (label) label.textContent = t(event.target.checked ? 'Authorized' : 'Pulse not visible');
+    });
+    accessForm?.addEventListener('submit', (event) => {
+      if (pulseDirty && !window.confirm(t('Pulse composition changes have not been saved. Continue without saving them?'))) {
+        event.preventDefault();
+        return;
+      }
+      submitting = true;
+    });
+    window.addEventListener('beforeunload', (event) => {
+      if ((pulseDirty || accessDirty) && !submitting) { event.preventDefault(); event.returnValue = ''; }
+    });
     const profileSelect = document.querySelector('[data-pulse-profile-select]');
     profileSelect?.addEventListener('change', () => {
+      if ((pulseDirty || accessDirty) && !window.confirm(t('Unsaved changes will be lost when changing profile. Continue?'))) {
+        profileSelect.value = profileSelect.dataset.savedProfile;
+        return;
+      }
+      submitting = true;
       const baseUrl = profileSelect.dataset.baseUrl || window.location.pathname;
       window.location.assign(baseUrl + '&profile_id=' + encodeURIComponent(profileSelect.value));
     });
-
+    const rowFor = (element) => element?.closest('[data-pulse-row]')
+      || pulseRows()[Number(element?.closest('[data-pulse-row-index]')?.dataset.pulseRowIndex)];
+    document.querySelector('[data-pulse-composition]')?.addEventListener('click', (event) => {
+      const button = event.target.closest('[data-pulse-compose-action]');
+      const row = rowFor(button);
+      if (!row || !button || button.disabled) return;
+      const action = button.dataset.pulseComposeAction;
+      const active = row.querySelector('[data-profile-active], [data-global-active]');
+      if (action === 'add' || action === 'remove') {
+        const limit = Number(document.querySelector('[data-profile-counter-limit]')?.value || 6);
+        if (action === 'add' && activePulseRows().length >= limit) return;
+        active.checked = action === 'add';
+      } else if (action === 'up' || action === 'down') {
+        const rows = activePulseRows();
+        const target = rows[rows.indexOf(row) + (action === 'up' ? -1 : 1)];
+        if (!target) return;
+        if (action === 'up') target.before(row); else target.after(row);
+      } else return;
+      const restoreFocus = document.activeElement === button || event.detail === 0;
+      pulseChanged(row);
+      if (restoreFocus) {
+        const nextAction = action === 'add' ? 'remove' : action === 'remove' ? 'add' : action;
+        const index = pulseRows().indexOf(row);
+        const item = document.querySelector('[data-pulse-composition] [data-pulse-row-index="' + index + '"]');
+        const next = item?.querySelector('[data-pulse-compose-action="' + nextAction + '"]:not(:disabled)')
+          || item?.querySelector('button:not(:disabled)');
+        next?.focus({ preventScroll: true });
+      }
+    });
+    let draggedRow = null;
+    document.addEventListener('dragstart', (event) => {
+      const handle = event.target.closest('[data-pulse-drag]');
+      draggedRow = rowFor(handle);
+      if (!draggedRow || !handle) return;
+      event.dataTransfer?.setData('text/plain', String(pulseRows().indexOf(draggedRow)));
+      if (event.dataTransfer) event.dataTransfer.effectAllowed = 'move';
+      draggedRow.classList.add('brandpulse-row-dragging');
+    });
+    document.addEventListener('dragover', (event) => {
+      if (!draggedRow || !rowFor(event.target)) return;
+      event.preventDefault();
+      if (event.dataTransfer) event.dataTransfer.dropEffect = 'move';
+    });
+    document.addEventListener('drop', (event) => {
+      const target = rowFor(event.target);
+      if (!draggedRow || !target || target === draggedRow) return;
+      event.preventDefault();
+      const moving = draggedRow;
+      const box = (event.target.closest('[data-pulse-row-index], [data-pulse-row]')).getBoundingClientRect();
+      if (event.clientY < box.top + box.height / 2) target.before(moving); else target.after(moving);
+      moving.classList.remove('brandpulse-row-dragging');
+      draggedRow = null;
+      pulseChanged(moving);
+    });
+    document.addEventListener('dragend', () => {
+      draggedRow?.classList.remove('brandpulse-row-dragging');
+      draggedRow = null;
+    });
     syncProfileCounterRows();
   };
 
@@ -784,6 +968,7 @@
 
     if (input) {
       input.value = value;
+      input.dispatchEvent(new Event('input', { bubbles: true }));
     }
     if (preview) {
       setMaskIcon(preview, resolveIconUrl(value));
@@ -930,6 +1115,108 @@
     });
   };
 
+  const setupTicketViewModal = () => {
+    const modal = document.querySelector('[data-pulse-view-modal]');
+    if (!modal || modal.dataset.ready || !window.bootstrap?.Modal) {
+      return;
+    }
+    modal.dataset.ready = '1';
+    const options = JSON.parse(modal.dataset.viewOptions || '{}');
+    const defaults = JSON.parse(modal.dataset.defaultColumns || '[]');
+    const dialog = window.bootstrap.Modal.getOrCreateInstance(modal);
+    const useGlpi = modal.querySelector('[data-view-use-glpi]');
+    const custom = modal.querySelector('[data-view-custom]');
+    const available = modal.querySelector('[data-view-available]');
+    const list = modal.querySelector('[data-view-columns]');
+    const sort = modal.querySelector('[data-view-sort]');
+    const order = modal.querySelector('[data-view-order]');
+    let activeRow = null;
+    let columns = [];
+    const validColumns = (values) => [...new Set((Array.isArray(values) ? values : []).map(Number))]
+      .filter((id) => options[id] && !options[id].fixed);
+    const syncMode = () => {
+      custom.disabled = useGlpi.checked || Object.keys(options).length === 0;
+    };
+    const renderColumns = () => {
+      list.replaceChildren();
+      columns.forEach((id, index) => {
+        const row = document.createElement('li');
+        row.className = 'list-group-item d-flex align-items-center justify-content-between gap-2';
+        const label = document.createElement('span');
+        label.textContent = options[id].name;
+        row.append(label);
+        const controls = document.createElement('div');
+        controls.className = 'btn-group btn-group-sm';
+        for (const [action, title, text] of [['up', 'Move up', '↑'], ['down', 'Move down', '↓'], ['remove', 'Remove column', '×']]) {
+          const button = document.createElement('button');
+          button.type = 'button';
+          button.className = 'btn btn-outline-secondary';
+          button.textContent = text;
+          button.title = t(title);
+          button.setAttribute('aria-label', t(title) + ' — ' + options[id].name);
+          button.disabled = (action === 'up' && index === 0) || (action === 'down' && index === columns.length - 1);
+          button.addEventListener('click', () => {
+            if (action === 'remove') {
+              columns.splice(index, 1);
+            } else {
+              const destination = index + (action === 'up' ? -1 : 1);
+              [columns[index], columns[destination]] = [columns[destination], columns[index]];
+            }
+            renderColumns();
+          });
+          controls.append(button);
+        }
+        row.append(controls);
+        list.append(row);
+      });
+      for (const option of available.options) {
+        option.disabled = columns.includes(Number(option.value));
+      }
+      available.value = Array.from(available.options).find((option) => !option.disabled)?.value || '';
+      modal.querySelector('[data-view-add]').disabled = !available.value;
+    };
+
+    document.addEventListener('click', (event) => {
+      const opener = event.target.closest('[data-pulse-view-open]');
+      if (!opener) {
+        return;
+      }
+      activeRow = opener.closest('[data-pulse-row]');
+      const input = activeRow.querySelector('[data-pulse-view]');
+      let view = {};
+      try {
+        view = JSON.parse(input.value) || {};
+      } catch (error) {
+        // A malformed draft falls back to native preferences.
+      }
+      useGlpi.checked = view.use_glpi !== false;
+      useGlpi.disabled = Object.keys(options).length === 0;
+      columns = validColumns(useGlpi.checked && !view.columns?.length ? defaults : view.columns);
+      sort.value = String(view.sort || 0);
+      if (!sort.value) sort.value = '0';
+      order.value = view.order === 'ASC' ? 'ASC' : 'DESC';
+      modal.querySelector('[data-view-counter-name]').textContent = activeRow.querySelector('[name$="[label]"]')?.value || '';
+      renderColumns();
+      syncMode();
+      dialog.show();
+    });
+    useGlpi.addEventListener('change', syncMode);
+    modal.querySelector('[data-view-add]').addEventListener('click', () => {
+      columns = validColumns([...columns, Number(available.value)]);
+      renderColumns();
+    });
+    modal.querySelector('[data-view-apply]').addEventListener('click', () => {
+      if (!activeRow) return;
+      activeRow.querySelector('[data-pulse-view]').value = JSON.stringify({
+        use_glpi: useGlpi.checked, columns, sort: Number(sort.value), order: order.value,
+      });
+      activeRow.querySelector('[data-pulse-view-label]').textContent = t(useGlpi.checked ? 'GLPI preferences' : 'Custom view');
+      markPulseDirty();
+      dialog.hide();
+    });
+    modal.addEventListener('hidden.bs.modal', () => { activeRow = null; });
+  };
+
   const setupBrandingCacheInvalidation = () => {
     const enabledToggle = document.getElementById('brand_enabled');
     const form = enabledToggle?.closest('form');
@@ -939,8 +1226,10 @@
 
     form.dataset.brandpulseBrandCacheReady = '1';
     form.addEventListener('submit', () => {
-      if (!enabledToggle.checked) {
+      try {
         cacheStorage()?.removeItem(brandingCacheKey);
+      } catch (error) {
+        // Storage restrictions must not prevent configuration submission.
       }
     });
   };
@@ -1000,6 +1289,85 @@
     openTarget(window.location.hash);
   };
 
+  const renderAssetManagementButton = (slot, payload) => {
+    if (!payload?.available || !payload.preferred_url || slot.querySelector('[data-brandpulse-management-link]')) {
+      return;
+    }
+
+    const container = document.createElement('div');
+    container.className = 'brandpulse-asset-management btn-group';
+    container.dataset.brandpulseManagementLink = '1';
+    container.setAttribute('role', 'group');
+    container.setAttribute('aria-label', t('Open the management interface'));
+
+    const primary = document.createElement('a');
+    primary.className = 'btn btn-primary';
+    primary.href = payload.preferred_url;
+    primary.target = '_blank';
+    primary.rel = 'noopener noreferrer';
+    primary.title = t('Open the management interface over') + ' '
+      + payload.preferred_scheme.toUpperCase() + ' — ' + payload.address;
+    primary.innerHTML = '<i class="ti ti-device-desktop-share" aria-hidden="true"></i> '
+      + '<span>' + escapeHtml(t('Open the interface')) + '</span>';
+
+    const fallback = document.createElement('a');
+    fallback.className = 'btn btn-outline-secondary';
+    fallback.href = payload.fallback_url;
+    fallback.target = '_blank';
+    fallback.rel = 'noopener noreferrer';
+    fallback.textContent = payload.fallback_scheme.toUpperCase();
+    fallback.title = t('Open over') + ' ' + payload.fallback_scheme.toUpperCase() + ' — ' + payload.address;
+
+    container.append(primary, fallback);
+    slot.append(container);
+    slot.classList.add('is-available');
+  };
+
+  const setupAssetManagementLink = () => {
+    const load = () => {
+      for (const slot of document.querySelectorAll('[data-brandpulse-asset-management-slot]')) {
+        if (slot.dataset.brandpulseManagementChecked === '1') {
+          continue;
+        }
+
+        const id = Number.parseInt(slot.dataset.itemsId || '', 10);
+        const itemtype = slot.dataset.itemtype || '';
+        slot.dataset.brandpulseManagementChecked = '1';
+        if (!Number.isInteger(id) || id <= 0 || !itemtype) {
+          continue;
+        }
+
+        const query = new URLSearchParams({ itemtype, id: String(id) });
+        fetch(assetManagementEndpoint + '?' + query, {
+          credentials: 'same-origin',
+          headers: { Accept: 'application/json' },
+        }).then((response) => response.ok ? response.json() : null)
+          .then((payload) => renderAssetManagementButton(slot, payload))
+          .catch((error) => {
+            window.console?.debug?.(t('BrandPulse asset management link unavailable'), error);
+          });
+      }
+    };
+
+    load();
+    if (!assetManagementObserver) {
+      let pending = false;
+      assetManagementObserver = new MutationObserver((mutations) => {
+        if (pending || !mutations.some((mutation) => Array.from(mutation.addedNodes).some((node) =>
+          node.nodeType === 1 && (node.matches('[data-brandpulse-asset-management-slot]')
+            || node.querySelector('[data-brandpulse-asset-management-slot]'))))) {
+          return;
+        }
+        pending = true;
+        window.requestAnimationFrame(() => {
+          pending = false;
+          load();
+        });
+      });
+      assetManagementObserver.observe(document.body, { childList: true, subtree: true });
+    }
+  };
+
   const scheduleRefresh = (payload) => {
     if (refreshTimer) {
       window.clearTimeout(refreshTimer);
@@ -1008,6 +1376,53 @@
     const interval = Math.max(15, Number(payload.refresh_interval || 60)) * 1000;
     const jitter = 0.9 + (Math.random() * 0.2);
     refreshTimer = window.setTimeout(loadCounters, Math.round(interval * jitter));
+  };
+
+  const requestCounterRefresh = () => {
+    if (document.hidden || countersLoading) {
+      freshRefreshPending = true;
+      return;
+    }
+    // GLPI can emit both its form-success event and ajaxSuccess for one save.
+    window.clearTimeout(refreshTimer);
+    refreshTimer = window.setTimeout(() => loadCounters(true), 200);
+  };
+
+  const setupCounterRefresh = () => {
+    if (counterRefreshReady) {
+      return;
+    }
+    counterRefreshReady = true;
+    document.addEventListener('visibilitychange', () => {
+      if (!document.hidden) {
+        requestCounterRefresh();
+      }
+    });
+    window.addEventListener('focus', requestCounterRefresh);
+    window.addEventListener('pageshow', (event) => {
+      if (event.persisted) {
+        requestCounterRefresh();
+      }
+    });
+
+    if (typeof window.jQuery === 'function') {
+      window.jQuery(document).on('glpi-ajax-controller-submit-success.brandpulse', requestCounterRefresh);
+      window.jQuery(document).on('ajaxSuccess.brandpulse', (event, xhr, settings) => {
+        const method = String(settings.type || settings.method || 'GET').toUpperCase();
+        if (method === 'GET' || method === 'HEAD') {
+          return;
+        }
+        try {
+          const url = new URL(settings.url, window.location.href);
+          const appRoot = new URL(rootDoc.replace(/\/$/, '') + '/', window.location.href);
+          if (url.origin === appRoot.origin && url.pathname.startsWith(appRoot.pathname)) {
+            requestCounterRefresh();
+          }
+        } catch (error) {
+          // Ignore requests outside GLPI or with an invalid URL.
+        }
+      });
+    }
   };
 
   async function loadBranding() {
@@ -1029,10 +1444,27 @@
     }
   }
 
-  async function loadCounters() {
+  async function loadCounters(fresh = false) {
+    if (countersLoading) {
+      freshRefreshPending ||= fresh;
+      return;
+    }
+    if (document.hidden) {
+      freshRefreshPending ||= fresh;
+      scheduleRefresh(lastRefreshPayload);
+      return;
+    }
+    countersLoading = true;
+    fresh ||= freshRefreshPending;
+    freshRefreshPending = false;
+    window.clearTimeout(refreshTimer);
+    const controller = new AbortController();
+    const timeout = window.setTimeout(() => controller.abort(), 20000);
     try {
-      const response = await fetch(countersEndpoint, {
+      const response = await fetch(countersEndpoint + (fresh ? '?fresh=1' : ''), {
         credentials: 'same-origin',
+        cache: 'no-store',
+        signal: controller.signal,
         headers: {
           Accept: 'application/json',
         },
@@ -1043,11 +1475,19 @@
       }
 
       const payload = await response.json();
+      lastRefreshPayload = payload;
       setupCompactSearch(payload.compact_search_enabled);
       render(payload);
-      scheduleRefresh(payload);
     } catch (error) {
       window.console?.debug?.(t('BrandPulse counters unavailable'), error);
+    } finally {
+      window.clearTimeout(timeout);
+      countersLoading = false;
+      if (freshRefreshPending && !document.hidden) {
+        loadCounters(true);
+      } else {
+        scheduleRefresh(lastRefreshPayload);
+      }
     }
   }
 
@@ -1056,7 +1496,11 @@
       return;
     }
 
-    cacheStorage()?.removeItem('brandpulse:pulse-payload:v1');
+    try {
+      cacheStorage()?.removeItem('brandpulse:pulse-payload:v1');
+    } catch (error) {
+      // Optional browser storage must not prevent the plugin from starting.
+    }
 
     setupPulseTargets();
     setupPulseTableControls();
@@ -1064,17 +1508,20 @@
     setupProfileCounterLimit();
     setupPulseModeControls();
     setupIconPickerModal();
+    setupTicketViewModal();
     setupBrandingCacheInvalidation();
     setupAlertFormattingToolbar();
     setupBrandSectionNavigation();
+    setupAssetManagementLink();
     const cachedBranding = cachedBrandingPayload();
     if (cachedBranding) {
       applyBranding(cachedBranding);
     }
     loadBranding();
 
-    if (findHeaderTarget()) {
-      loadCounters();
+    if (!document.querySelector('.page-anonymous')) {
+      setupCounterRefresh();
+      loadCounters(true);
     }
   };
 

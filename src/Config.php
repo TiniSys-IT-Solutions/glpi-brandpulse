@@ -58,6 +58,13 @@ final class Config
             ? $values['pulse_mode']
             : 'global';
         $values['global_selfservice_enabled'] = (bool) (int) $values['global_selfservice_enabled'];
+        $values['asset_management_enabled'] = (bool) (int) $values['asset_management_enabled'];
+        $values['asset_management_scheme'] = in_array($values['asset_management_scheme'], ['https', 'http'], true)
+            ? $values['asset_management_scheme']
+            : 'https';
+        $values['asset_management_itemtypes'] = AssetManagementLink::normalizeItemtypes(
+            self::decodeJson($values['asset_management_itemtypes_json'], AssetManagementLink::supportedItemtypes())
+        );
         $values['refresh_interval'] = max(15, (int) $values['refresh_interval']);
         $values['max_profile_counters'] = self::normalizeMaxProfileCounters(
             (int) $values['max_profile_counters']
@@ -121,6 +128,17 @@ final class Config
         ]);
     }
 
+    public static function saveAssetManagement(bool $enabled, string $scheme, array $itemtypes): void
+    {
+        self::save([
+            'asset_management_enabled' => $enabled ? '1' : '0',
+            'asset_management_scheme' => in_array($scheme, ['https', 'http'], true) ? $scheme : 'https',
+            'asset_management_itemtypes_json' => self::encodeJson(
+                AssetManagementLink::normalizeItemtypes($itemtypes)
+            ),
+        ]);
+    }
+
     public static function defaults(): array
     {
         return [
@@ -130,6 +148,9 @@ final class Config
             'pulse_mode' => 'global',
             'global_selfservice_enabled' => '0',
             'compact_search_enabled' => '0',
+            'asset_management_enabled' => '1',
+            'asset_management_scheme' => 'https',
+            'asset_management_itemtypes_json' => self::encodeJson(AssetManagementLink::supportedItemtypes()),
             'branding_json' => self::encodeJson(self::defaultBranding()),
             'counters_json' => self::encodeJson(self::defaultCounters()),
             self::SCHEMA_VERSION_KEY => '',
@@ -361,6 +382,7 @@ final class Config
                 'savedsearches_id' => $savedSearchId,
                 'warning_threshold' => max(0, (int) ($counter['warning_threshold'] ?? 0)),
                 'critical_threshold' => max(0, (int) ($counter['critical_threshold'] ?? 0)),
+                'view' => TicketView::normalize(is_array($counter['view'] ?? null) ? $counter['view'] : []),
             ];
         }
 
@@ -420,12 +442,20 @@ final class Config
     private static function normalizeAssetReference(string $value): string
     {
         $value = trim($value);
-        if ($value === '' || preg_match('/[\x00-\x1F\x7F]/', $value) === 1) {
+        if ($value === '' || str_contains($value, '\\') || preg_match('/[\x00-\x1F\x7F]/', $value) === 1) {
             return '';
         }
 
-        $scheme = parse_url($value, PHP_URL_SCHEME);
+        $parts = parse_url($value);
+        if ($parts === false) {
+            return '';
+        }
+        $scheme = $parts['scheme'] ?? null;
         if ($scheme !== null && !in_array(strtolower((string) $scheme), ['http', 'https'], true)) {
+            return '';
+        }
+
+        if (($scheme !== null || str_starts_with($value, '//')) && empty($parts['host'])) {
             return '';
         }
 

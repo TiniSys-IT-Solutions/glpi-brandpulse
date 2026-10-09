@@ -6,6 +6,60 @@ namespace GlpiPlugin\Brandpulse;
 
 final class BrandAssetStore
 {
+    public static function isSafeSvg(string $content): bool
+    {
+        if ($content === '' || stripos($content, '<!DOCTYPE') !== false) {
+            return false;
+        }
+
+        $previous = libxml_use_internal_errors(true);
+        try {
+            $document = new \DOMDocument();
+            if (!$document->loadXML($content, LIBXML_NONET | LIBXML_NOBLANKS)) {
+                return false;
+            }
+        } finally {
+            libxml_clear_errors();
+            libxml_use_internal_errors($previous);
+        }
+
+        if ($document->documentElement?->localName !== 'svg'
+            || $document->documentElement->namespaceURI !== 'http://www.w3.org/2000/svg') {
+            return false;
+        }
+        if ((new \DOMXPath($document))->query('//processing-instruction()')->length > 0) {
+            return false;
+        }
+
+        // Animation can change a safe attribute into an external or active URL.
+        $blocked = ['script', 'foreignobject', 'iframe', 'object', 'embed', 'audio', 'video',
+            'animate', 'animatetransform', 'animatemotion', 'set', 'discard'];
+        $activeCss = '/(?:url\s*\(|expression\s*\(|@import|\\\\)/i';
+        foreach ($document->getElementsByTagName('*') as $element) {
+            if ($element->namespaceURI !== 'http://www.w3.org/2000/svg'
+                || in_array(strtolower($element->localName), $blocked, true)) {
+                return false;
+            }
+            if (strtolower($element->localName) === 'style' && preg_match($activeCss, $element->textContent)) {
+                return false;
+            }
+            foreach ($element->attributes ?? [] as $attribute) {
+                $name = strtolower($attribute->localName);
+                $value = trim($attribute->value);
+                if (str_starts_with($name, 'on')
+                    || str_contains($value, '\\')
+                    || (in_array($name, ['href', 'src'], true) && $value !== '' && !str_starts_with($value, '#'))
+                    || ($name === 'base')
+                    || ($name === 'style' && preg_match($activeCss, $value))
+                    || preg_match('/url\s*\(\s*["\']?\s*(?!#)[^\s"\')]/i', $value)) {
+                    return false;
+                }
+            }
+        }
+
+        return true;
+    }
+
     public static function pluginDocumentDirectory(): string
     {
         if (defined('GLPI_PLUGIN_DOC_DIR')) {

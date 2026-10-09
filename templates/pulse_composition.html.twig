@@ -1,0 +1,28 @@
+<div class="card mb-3" data-pulse-composition>
+    <div class="card-header d-flex flex-wrap justify-content-between align-items-center gap-3">
+        <strong>{{ __('Header composition', 'brandpulse') }}</strong>
+        {% if mode == 'profile' %}
+            <label class="brandpulse-inline-profile"><span>{{ __('GLPI profile', 'brandpulse') }}</span>
+                <select class="form-select form-select-sm" name="profile_id" data-pulse-profile-select data-base-url="{{ base_url }}" data-saved-profile="{{ selected_profile }}">
+                    {% for id, name in profiles %}<option value="{{ id }}" {% if id == selected_profile %}selected{% endif %}>{{ name }}</option>{% endfor %}
+                </select>
+            </label>
+        {% else %}<span class="text-muted">{{ __('Shared composition', 'brandpulse') }}</span>{% endif %}
+    </div>
+    <div class="card-body">
+        <div class="d-flex justify-content-between gap-2 mb-2"><strong>{{ __('Displayed counters', 'brandpulse') }}</strong><span data-pulse-active-count aria-live="polite"></span></div>
+        <p class="text-muted">{{ __('Drag a handle to reorder counters, or use the arrows. Preview values are examples.', 'brandpulse') }}</p>
+        <div class="brandpulse-composition-list" data-pulse-composition-active></div>
+        <div class="brandpulse-composition-preview mt-3">
+            <strong>{{ __('Header preview', 'brandpulse') }}</strong>
+            <div class="brandpulse-profile-preview-counters" data-profile-counter-preview></div>
+        </div>
+        <strong class="d-block mt-3 mb-2">{{ __('Available counters', 'brandpulse') }}</strong>
+        <div class="brandpulse-composition-list" data-pulse-composition-available></div>
+        <div class="visually-hidden" data-pulse-move-announcement role="status" aria-live="polite"></div>
+    </div>
+    <div class="card-footer brandpulse-composition-save">
+        <span data-pulse-dirty-status class="text-muted">{{ __('No pending changes.', 'brandpulse') }}</span>
+        <button class="btn btn-primary" type="submit">{{ __('Save Pulse configuration', 'brandpulse') }}</button>
+    </div>
+</div>
