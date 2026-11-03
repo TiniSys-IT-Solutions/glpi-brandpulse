@@ -525,6 +525,39 @@
     });
   };
 
+  // Use GLPI's html5sortable bundle, as RuleCollection and DisplayPreference do.
+  let nativeSortId = 0;
+  const destroyNativeSortable = (element) => {
+    if (!element) return;
+    if (element._brandpulseSortUpdate) element.removeEventListener('sortupdate', element._brandpulseSortUpdate);
+    element._brandpulseSortUpdate = null;
+    if (typeof window.sortable === 'function' && element.isSortable) window.sortable(element, 'destroy');
+  };
+  const nativeSortable = (element, handle, items, onUpdate) => {
+    if (!element || typeof window.sortable !== 'function') return;
+    destroyNativeSortable(element);
+    if (!element.id) element.id = 'brandpulse-sortable-' + (++nativeSortId);
+    const placeholder = document.createElement(element.tagName === 'TBODY' ? 'tr' : 'li');
+    placeholder.className = 'sortable-placeholder';
+    if (element.tagName === 'TBODY') {
+      const cell = document.createElement('td');
+      cell.colSpan = element.closest('table').querySelectorAll('thead th').length || 20;
+      cell.className = 'sortable-placeholder';
+      cell.textContent = t('Drop here');
+      placeholder.append(cell);
+    } else {
+      placeholder.classList.add('list-group-item');
+      placeholder.textContent = t('Drop here');
+    }
+    window.sortable(element, {
+      handle, items, acceptFrom: '#' + element.id,
+      placeholder: placeholder.outerHTML, forcePlaceholderSize: true,
+    });
+    // Let native drop/dragend cleanup finish before rebuilding list contents.
+    element._brandpulseSortUpdate = (event) => window.setTimeout(() => onUpdate(event), 0);
+    element.addEventListener('sortupdate', element._brandpulseSortUpdate);
+  };
+
   const pulseRows = () => [...document.querySelectorAll('[data-pulse-rows] > [data-pulse-row]')];
 
   const renumberPulseRows = () => {
@@ -682,22 +715,26 @@
     for (const [selector, selected] of [['[data-pulse-composition-active]', true], ['[data-pulse-composition-available]', false]]) {
       const container = document.querySelector(selector);
       if (!container) continue;
+      destroyNativeSortable(container);
       container.replaceChildren();
       const selectedRows = selected ? activeRows : rows.filter((row) => !activeRows.includes(row));
       if (!selectedRows.length) {
-        const empty = document.createElement('span');
-        empty.className = 'text-muted';
+        const empty = document.createElement('li');
+        empty.className = 'list-group-item text-muted';
         empty.textContent = t(selected ? 'No displayed counters.' : 'All counters are displayed.');
         container.append(empty);
       }
       selectedRows.forEach((row, index) => {
-        const item = document.createElement('div');
-        item.className = 'brandpulse-composition-item';
+        const item = document.createElement('li');
+        item.className = 'list-group-item brandpulse-composition-item';
         item.classList.toggle('brandpulse-row-moved', row === movedPulseRow);
         item.dataset.pulseRowIndex = String(rows.indexOf(row));
         if (selected) {
-          const drag = pulseButton('↕', 'drag', t('Drag to reorder') + ' — ' + pulseRowLabel(row));
-          drag.draggable = true;
+          const drag = pulseButton('', 'drag', t('Drag to reorder') + ' — ' + pulseRowLabel(row));
+          const grip = document.createElement('i');
+          grip.className = 'ti ti-grip-vertical';
+          grip.setAttribute('aria-hidden', 'true');
+          drag.append(grip);
           drag.setAttribute('data-pulse-drag', '');
           item.append(drag);
         }
@@ -724,7 +761,19 @@
         }
         container.append(item);
       });
+      if (selected) nativeSortable(container, '[data-pulse-drag]', '.brandpulse-composition-item', (event) => {
+        const before = pulseRows();
+        const moved = before[Number(event.detail.item.dataset.pulseRowIndex)];
+        const reordered = Array.from(container.querySelectorAll('[data-pulse-row-index]'))
+          .map((item) => before[Number(item.dataset.pulseRowIndex)]);
+        const selectedRows = activePulseRows();
+        const allRows = before.map((row) => selectedRows.includes(row) ? reordered.shift() : row);
+        document.querySelector('[data-pulse-rows]').append(...allRows);
+        pulseChanged(moved);
+      });
     }
+    nativeSortable(document.querySelector('[data-pulse-rows]'), '[data-pulse-drag]', '[data-pulse-row]',
+      (event) => pulseChanged(event.detail.item));
     const preview = document.querySelector('[data-profile-counter-preview]');
     if (preview) {
       preview.replaceChildren();
@@ -758,6 +807,41 @@
     }
   };
 
+  const syncCompositionProfiles = () => {
+    const select = document.querySelector('[data-pulse-profile-select]');
+    const access = document.querySelector('[data-pulse-profile-access-select]');
+    if (!select || !access || !select.dataset.profileOptions) return;
+    const allowed = new Set(Array.from(access.selectedOptions).map((option) => Number(option.value)));
+    for (const id of JSON.parse(select.dataset.readonlyProfileIds || '[]')) allowed.add(Number(id));
+    const profiles = JSON.parse(select.dataset.profileOptions).filter((profile) => allowed.has(Number(profile.id)));
+    const current = String(select.dataset.savedProfile || '0');
+    select.replaceChildren();
+    const hasCurrent = profiles.some((profile) => String(profile.id) === current);
+    if (!hasCurrent) {
+      const placeholder = document.createElement('option');
+      placeholder.value = '';
+      placeholder.textContent = profiles.length
+        ? (select.dataset.saveFirstLabel || t('Save the profile selection first.'))
+        : (select.dataset.emptyLabel || t('No authorized profile.'));
+      select.append(placeholder);
+    }
+    for (const profile of profiles) {
+      const option = document.createElement('option');
+      option.value = String(profile.id);
+      option.textContent = profile.name;
+      select.append(option);
+    }
+    select.value = hasCurrent ? current : '';
+    select.disabled = !hasCurrent;
+    const status = document.querySelector('[data-pulse-profile-selection-status]');
+    if (status) {
+      status.classList.toggle('d-none', hasCurrent);
+      status.textContent = profiles.length
+        ? (select.dataset.saveFirstLabel || t('Save the profile selection first.'))
+        : (select.dataset.selectProfilesLabel || t('Select authorized profiles above, then save the Pulse configuration.'));
+    }
+  };
+
   const setupProfileCounterControls = () => {
     const table = document.querySelector('[data-pulse-table]');
     if (!table || table.dataset.compositionReady) return;
@@ -766,7 +850,7 @@
     let submitting = false;
     let accessDirty = false;
     form?.addEventListener('input', () => { markPulseDirty(); syncProfileCounterRows(); });
-    form?.addEventListener('change', () => { markPulseDirty(); syncProfileCounterRows(); });
+    form?.addEventListener('change', () => { markPulseDirty(); syncProfileCounterRows(); syncCompositionProfiles(); });
     form?.addEventListener('submit', (event) => {
       if (accessDirty && !window.confirm(t('Profile permission changes have not been saved. Continue without saving them?'))) {
         event.preventDefault();
@@ -790,8 +874,22 @@
     window.addEventListener('beforeunload', (event) => {
       if ((pulseDirty || accessDirty) && !submitting) { event.preventDefault(); event.returnValue = ''; }
     });
+    if (window.jQuery) window.jQuery('[data-pulse-profile-access-select]').on('change.brandpulse', () => {
+      markPulseDirty();
+      syncCompositionProfiles();
+      const select = document.querySelector('[data-pulse-profile-access-select]');
+      const count = document.querySelector('[data-pulse-profile-access-count]');
+      if (count && select) count.textContent = select.selectedOptions.length + ' ' + (count.dataset.label || t('selected profiles'));
+    });
     const profileSelect = document.querySelector('[data-pulse-profile-select]');
+    syncCompositionProfiles();
     profileSelect?.addEventListener('change', () => {
+      if (profileSelect.dataset.persistedProfileIds && !JSON.parse(profileSelect.dataset.persistedProfileIds).map(String).includes(profileSelect.value)) {
+        profileSelect.value = profileSelect.dataset.savedProfile;
+        const status = document.querySelector('[data-pulse-profile-selection-status]');
+        if (status) { status.classList.remove('d-none'); status.textContent = profileSelect.dataset.saveFirstLabel || t('Save the profile selection first.'); }
+        return;
+      }
       if ((pulseDirty || accessDirty) && !window.confirm(t('Unsaved changes will be lost when changing profile. Continue?'))) {
         profileSelect.value = profileSelect.dataset.savedProfile;
         return;
@@ -829,35 +927,6 @@
         next?.focus({ preventScroll: true });
       }
     });
-    let draggedRow = null;
-    document.addEventListener('dragstart', (event) => {
-      const handle = event.target.closest('[data-pulse-drag]');
-      draggedRow = rowFor(handle);
-      if (!draggedRow || !handle) return;
-      event.dataTransfer?.setData('text/plain', String(pulseRows().indexOf(draggedRow)));
-      if (event.dataTransfer) event.dataTransfer.effectAllowed = 'move';
-      draggedRow.classList.add('brandpulse-row-dragging');
-    });
-    document.addEventListener('dragover', (event) => {
-      if (!draggedRow || !rowFor(event.target)) return;
-      event.preventDefault();
-      if (event.dataTransfer) event.dataTransfer.dropEffect = 'move';
-    });
-    document.addEventListener('drop', (event) => {
-      const target = rowFor(event.target);
-      if (!draggedRow || !target || target === draggedRow) return;
-      event.preventDefault();
-      const moving = draggedRow;
-      const box = (event.target.closest('[data-pulse-row-index], [data-pulse-row]')).getBoundingClientRect();
-      if (event.clientY < box.top + box.height / 2) target.before(moving); else target.after(moving);
-      moving.classList.remove('brandpulse-row-dragging');
-      draggedRow = null;
-      pulseChanged(moving);
-    });
-    document.addEventListener('dragend', () => {
-      draggedRow?.classList.remove('brandpulse-row-dragging');
-      draggedRow = null;
-    });
     syncProfileCounterRows();
   };
 
@@ -868,6 +937,18 @@
     const sync = () => {
       const mode = choices.find((choice) => choice.checked)?.value || 'global';
       selfservice.classList.toggle('d-none', mode !== 'global');
+      document.querySelector('[data-global-profile-permissions]')?.classList.toggle('d-none', mode !== 'global');
+      const access = document.querySelector('[data-pulse-profile-access]');
+      access?.classList.toggle('d-none', mode !== 'profile');
+      if (access) {
+        for (const input of access.querySelectorAll('input, select')) {
+          if (input.dataset.originallyDisabled === undefined) input.dataset.originallyDisabled = String(input.disabled && input.name !== 'pulse_profile_selection_present');
+          input.disabled = mode !== 'profile' || input.dataset.originallyDisabled === 'true';
+        }
+        const select = access.querySelector('[data-pulse-profile-access-select]');
+        const count = access.querySelector('[data-pulse-profile-access-count]');
+        if (count && select) count.textContent = select.selectedOptions.length + ' ' + (count.dataset.label || t('selected profiles'));
+      }
     };
     choices.forEach((choice) => choice.addEventListener('change', sync));
     sync();
@@ -1128,6 +1209,7 @@
     const custom = modal.querySelector('[data-view-custom]');
     const available = modal.querySelector('[data-view-available]');
     const list = modal.querySelector('[data-view-columns]');
+    const fixedColumns = Array.from(list.querySelectorAll('[data-fixed]'));
     const sort = modal.querySelector('[data-view-sort]');
     const order = modal.querySelector('[data-view-order]');
     let activeRow = null;
@@ -1136,21 +1218,36 @@
       .filter((id) => options[id] && !options[id].fixed);
     const syncMode = () => {
       custom.disabled = useGlpi.checked || Object.keys(options).length === 0;
+      if (list.isSortable && typeof window.sortable === 'function') window.sortable(list, custom.disabled ? 'disable' : 'enable');
     };
     const renderColumns = () => {
-      list.replaceChildren();
+      destroyNativeSortable(list);
+      list.replaceChildren(...fixedColumns);
       columns.forEach((id, index) => {
         const row = document.createElement('li');
-        row.className = 'list-group-item d-flex align-items-center justify-content-between gap-2';
+        row.className = 'list-group-item py-2 d-flex align-items-center px-2 gap-2';
+        row.dataset.viewColumnId = String(id);
+        const drag = document.createElement('button');
+        drag.type = 'button';
+        drag.className = 'btn btn-icon btn-sm btn-ghost-secondary';
+        drag.setAttribute('data-view-drag', '');
+        drag.title = t('Drag to reorder');
+        drag.setAttribute('aria-label', t('Drag to reorder') + ' — ' + options[id].name);
+        const grip = document.createElement('i');
+        grip.className = 'ti ti-grip-vertical';
+        grip.setAttribute('aria-hidden', 'true');
+        drag.append(grip);
+        row.append(drag);
         const label = document.createElement('span');
-        label.textContent = options[id].name;
+        label.className = 'flex-fill';
+        label.textContent = options[id].group ? options[id].group + ' — ' + options[id].name : options[id].name;
         row.append(label);
         const controls = document.createElement('div');
         controls.className = 'btn-group btn-group-sm';
         for (const [action, title, text] of [['up', 'Move up', '↑'], ['down', 'Move down', '↓'], ['remove', 'Remove column', '×']]) {
           const button = document.createElement('button');
           button.type = 'button';
-          button.className = 'btn btn-outline-secondary';
+          button.className = action === 'remove' ? 'btn btn-icon btn-sm btn-ghost-danger' : 'btn btn-icon btn-sm btn-ghost-secondary';
           button.textContent = text;
           button.title = t(title);
           button.setAttribute('aria-label', t(title) + ' — ' + options[id].name);
@@ -1169,6 +1266,11 @@
         row.append(controls);
         list.append(row);
       });
+      nativeSortable(list, '[data-view-drag]', 'li[data-view-column-id]', () => {
+        columns = validColumns(Array.from(list.querySelectorAll('[data-view-column-id]')).map((row) => row.dataset.viewColumnId));
+        renderColumns();
+      });
+      syncMode();
       for (const option of available.options) {
         option.disabled = columns.includes(Number(option.value));
       }
@@ -1210,7 +1312,7 @@
       activeRow.querySelector('[data-pulse-view]').value = JSON.stringify({
         use_glpi: useGlpi.checked, columns, sort: Number(sort.value), order: order.value,
       });
-      activeRow.querySelector('[data-pulse-view-label]').textContent = t(useGlpi.checked ? 'GLPI preferences' : 'Custom view');
+      activeRow.querySelector('[data-pulse-view-label]').textContent = t('Columns to display');
       markPulseDirty();
       dialog.hide();
     });

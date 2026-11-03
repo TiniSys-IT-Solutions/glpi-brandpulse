@@ -1,39 +1,11 @@
-<details class="card mb-3 brandpulse-profile-access" {% if access_error %}open{% endif %}>
-    <summary class="card-header d-flex justify-content-between align-items-center">
-        <strong>{{ __('Profiles authorized to display Pulse', 'brandpulse') }}</strong>
-        <span class="badge bg-secondary">{{ allowed_count }} / {{ profiles|length }}</span>
-    </summary>
-    <form method="post" action="{{ action }}" data-pulse-access-form>
-        <input type="hidden" name="{{ csrf_name }}" value="{{ csrf_token }}">
-        <input type="hidden" name="tab" value="pulse">
-        <input type="hidden" name="pulse_action" value="profile_access">
-        <input type="hidden" name="profile_id" value="{{ selected_profile }}">
-        <div class="card-body">
-            <p class="text-muted">{{ __('This is the native Display General Pulse permission. Counter assignments are configured separately below.', 'brandpulse') }}</p>
-            {% if not can_edit %}
-                <div class="alert alert-info">{{ __('You do not have permission to modify GLPI profiles.', 'brandpulse') }}</div>
-            {% endif %}
-            <div class="table-responsive">
-                <table class="table table-sm align-middle">
-                    <thead><tr><th>{{ __('GLPI profile', 'brandpulse') }}</th><th>{{ __('Interface', 'brandpulse') }}</th><th>{{ __('Display Pulse', 'brandpulse') }}</th><th>{{ __('Actions', 'brandpulse') }}</th></tr></thead>
-                    <tbody>{% for profile in profiles %}
-                        <tr>
-                            <td>{{ profile.name }}</td>
-                            <td>{{ profile.interface == 'central' ? __('Standard interface', 'brandpulse') : __('Self-service interface', 'brandpulse') }}</td>
-                            <td>
-                                {% if profile.editable %}<input type="hidden" name="pulse_profile_access[{{ profile.id }}]" value="0">{% endif %}
-                                <label class="form-check form-switch mb-0">
-                                    <input class="form-check-input" type="checkbox" name="pulse_profile_access[{{ profile.id }}]" value="1" {% if profile.allowed %}checked{% endif %} {% if not profile.editable %}disabled{% endif %}>
-                                    <span class="form-check-label">{{ profile.allowed ? __('Authorized', 'brandpulse') : __('Pulse not visible', 'brandpulse') }}</span>
-                                </label>
-                            </td>
-                            <td><a class="btn btn-sm btn-outline-secondary" href="{{ profile_url }}?id={{ profile.id }}">{{ __('Open profile', 'brandpulse') }}</a></td>
-                        </tr>
-                    {% endfor %}</tbody>
-                </table>
-            </div>
-            <p class="form-text mb-0">{{ __('Self-service profiles also require the appropriate Pulse display mode. Authorizing Pulse does not grant access to tickets.', 'brandpulse') }}</p>
-        </div>
-        {% if can_edit %}<div class="card-footer"><button type="submit" class="btn btn-primary">{{ __('Save profile permissions', 'brandpulse') }}</button></div>{% endif %}
-    </form>
-</details>
+<fieldset class="brandpulse-profile-selection border rounded p-3 {{ mode == 'profile' ? '' : 'd-none' }}" data-pulse-profile-access>
+    <legend class="float-none w-auto px-2 fs-5">
+        <i class="ti ti-list-check me-1" aria-hidden="true"></i>{{ __('Authorize specific profiles', 'brandpulse') }}
+    </legend>
+    {% if can_edit %}<input type="hidden" name="pulse_profile_selection_present" value="1" {% if mode != 'profile' %}disabled{% endif %}>{% endif %}
+    {{ profile_dropdown|raw }}
+    {% for name in readonly_profiles %}<span class="badge bg-secondary mt-2">{{ name }} — {{ __('Read only', 'brandpulse') }}</span>{% endfor %}
+    <div class="form-text" data-pulse-profile-access-count data-label="{{ __('selected profiles', 'brandpulse') }}" aria-live="polite"></div>
+    <p class="form-text mb-0">{{ __('Uses the native Display General Pulse permission. Save the Pulse configuration to apply this selection.', 'brandpulse') }}</p>
+    {% if not can_edit %}<p class="text-muted mb-0">{{ __('You do not have permission to modify GLPI profiles.', 'brandpulse') }}</p>{% endif %}
+</fieldset>

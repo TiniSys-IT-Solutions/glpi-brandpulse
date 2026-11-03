@@ -471,10 +471,10 @@ function plugin_brandpulse_pulse_row(
     $html .= "<td><input type='hidden' data-pulse-view name='counters[{$index}][view_json]' value='"
         . plugin_brandpulse_h((string) json_encode($view, JSON_UNESCAPED_UNICODE)) . "'>";
     $html .= "<button type='button' class='btn btn-sm btn-outline-secondary' data-pulse-view-open title='"
-        . __s('Configure ticket view', 'brandpulse') . "' aria-label='" . __s('Configure ticket view', 'brandpulse') . "'>"
-        . "<i class='ti ti-settings' aria-hidden='true'></i> <span data-pulse-view-label>"
-        . ($view['use_glpi'] ? __s('GLPI preferences', 'brandpulse') : __s('Custom view', 'brandpulse')) . '</span></button></td>';
-    $html .= "<td class='brandpulse-order-cell'><span data-pulse-position class='badge bg-secondary me-1'></span><button type='button' class='btn btn-sm btn-outline-secondary me-1' draggable='true' data-pulse-drag title='" . __s('Drag to reorder', 'brandpulse') . "' aria-label='" . __s('Drag to reorder', 'brandpulse') . "'><i class='ti ti-grip-vertical' aria-hidden='true'></i></button><div class='btn-group btn-group-sm' role='group' aria-label='" . __s('Order', 'brandpulse') . "'>";
+        . __s('Columns to display', 'brandpulse') . "' aria-label='" . __s('Columns to display', 'brandpulse') . "'>"
+        . "<i class='ti ti-table-row' aria-hidden='true'></i> <span data-pulse-view-label>"
+        . __s('Columns to display', 'brandpulse') . '</span></button></td>';
+    $html .= "<td class='brandpulse-order-cell'><span data-pulse-position class='badge bg-secondary me-1'></span><button type='button' class='btn btn-sm btn-outline-secondary me-1' data-pulse-drag title='" . __s('Drag to reorder', 'brandpulse') . "' aria-label='" . __s('Drag to reorder', 'brandpulse') . "'><i class='ti ti-grip-vertical' aria-hidden='true'></i></button><div class='btn-group btn-group-sm' role='group' aria-label='" . __s('Order', 'brandpulse') . "'>";
     $html .= "<button class='btn btn-outline-secondary' type='button' data-pulse-move='up' title='" . __s('Move up', 'brandpulse') . "' aria-label='" . __s('Move up', 'brandpulse') . "'>&uarr;</button>";
     $html .= "<button class='btn btn-outline-secondary' type='button' data-pulse-move='down' title='" . __s('Move down', 'brandpulse') . "' aria-label='" . __s('Move down', 'brandpulse') . "'>&darr;</button>";
     $html .= '</div></td>';
@@ -579,10 +579,17 @@ $tab = (string) ($_GET['tab'] ?? $_POST['tab'] ?? 'brand');
 $tab = in_array($tab, ['brand', 'alert', 'pulse', 'features', 'diagnostic'], true) ? $tab : 'brand';
 $errors = [];
 $profiles = plugin_brandpulse_profile_rows();
+$accessRows = $tab === 'pulse' ? ProfileAccess::rows() : [];
+$authorizedCompositionProfiles = ProfileAccess::compositionProfiles($profiles, $accessRows);
+$profileChoicesForContext = $tab === 'pulse' && $_SERVER['REQUEST_METHOD'] !== 'POST'
+    && BrandpulseConfig::values()['pulse_mode'] === 'profile' ? $authorizedCompositionProfiles : $profiles;
 $selectedProfileId = plugin_brandpulse_valid_profile_id(
     (int) ($_POST['profile_id'] ?? $_GET['profile_id'] ?? 0),
-    $profiles
+    $profileChoicesForContext
 );
+if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['profile_id']) && (int) $_POST['profile_id'] === 0) {
+    $selectedProfileId = 0;
+}
 
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     if ($tab === 'brand') {
@@ -704,9 +711,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             static fn (array $assignment): bool => $assignment['is_active']
         ));
 
-        if ($pulseMode === 'profile' && $selectedProfileId <= 0) {
-            $errors[] = __('Select a valid GLPI profile.', 'brandpulse');
-        }
         $maxProfileCounters = BrandpulseConfig::normalizeMaxProfileCounters(
             (int) ($_POST['max_profile_counters'] ?? PulseResolver::DEFAULT_MAX_PROFILE_COUNTERS)
         );
@@ -726,9 +730,24 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             $errors[] = __('Profile counters can only use public, available GLPI saved searches.', 'brandpulse');
         }
 
+        $profileAccessChanges = [];
+        if ($pulseMode === 'profile' && isset($_POST['pulse_profile_selection_present'])) {
+            try {
+                $submittedAccess = $_POST['pulse_allowed_profiles'] ?? [];
+                if ($submittedAccess === '') $submittedAccess = [];
+                if (!is_array($submittedAccess)) {
+                    throw new RuntimeException('A selected profile is unavailable or cannot be modified.');
+                }
+                $selectedAccess = $submittedAccess;
+                $profileAccessChanges = ProfileAccess::selectionChanges($selectedAccess, $accessRows);
+            } catch (RuntimeException $exception) {
+                $errors[] = __($exception->getMessage(), 'brandpulse');
+            }
+        }
         if ($errors === []) {
             try {
-                if ($pulseMode === 'profile' && $renderedPulseMode === 'profile') {
+                if ($profileAccessChanges !== []) ProfileAccess::save($profileAccessChanges);
+                if ($pulseMode === 'profile' && $renderedPulseMode === 'profile' && $selectedProfileId > 0) {
                     ProfileCounterStore::saveProfile(
                         $selectedProfileId,
                         $normalizedAssignments,
@@ -779,7 +798,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && $tab === 'pulse' && $errors !== [] 
 $profileAssignments = isset($normalizedAssignments) && $errors !== []
     ? $normalizedAssignments
     : ProfileCounterStore::normalizeSubmittedAssignments(
-        ProfileCounterStore::assignmentsForProfile($selectedProfileId, $counters),
+        $selectedProfileId > 0 ? ProfileCounterStore::assignmentsForProfile($selectedProfileId, $counters) : [],
         $counters
     );
 $assignmentsByKey = [];
@@ -811,6 +830,8 @@ $alertTypes = [
     'success' => 'Success',
 ];
 
+if ($tab === 'pulse') Html::requireJs('sortable');
+
 Html::header(__('GLPI BrandPulse', 'brandpulse'), plugin_brandpulse_config_url($tab), 'config', 'plugins');
 
 echo "<div class='brandpulse-config'>";
@@ -825,18 +846,17 @@ echo "<li class='nav-item'><a class='nav-link" . ($tab === 'diagnostic' ? ' acti
 echo '</ul>';
 
 if ($tab === 'pulse') {
-    $accessRows = ProfileAccess::rows();
-    Glpi\Application\View\TemplateRenderer::getInstance()->display('@brandpulse/pulse_profiles.html.twig', [
+    echo "<div data-global-profile-permissions" . ($config['pulse_mode'] === 'global' ? '' : " class='d-none'") . ">";
+    Glpi\Application\View\TemplateRenderer::getInstance()->display('@brandpulse/pulse_profile_permissions.html.twig', [
         'profiles' => $accessRows,
         'allowed_count' => count(array_filter($accessRows, static fn (array $row): bool => $row['allowed'])),
         'can_edit' => Session::haveRight('profile', UPDATE),
-        'action' => plugin_brandpulse_config_url('pulse'),
-        'profile_url' => Profile::getFormURL(),
-        'csrf_name' => plugin_brandpulse_csrf_token_name(),
-        'csrf_token' => Session::getNewCSRFToken(),
+        'action' => plugin_brandpulse_config_url('pulse'), 'profile_url' => Profile::getFormURL(),
+        'csrf_name' => plugin_brandpulse_csrf_token_name(), 'csrf_token' => Session::getNewCSRFToken(),
         'selected_profile' => $selectedProfileId,
         'access_error' => $errors !== [] && ($_POST['pulse_action'] ?? '') === 'profile_access',
     ]);
+    echo '</div>';
 }
 
 echo '<form method="post" enctype="multipart/form-data" action="' . plugin_brandpulse_h(plugin_brandpulse_config_url($tab)) . '">';
@@ -955,6 +975,31 @@ if ($tab === 'brand') {
     echo "<label class='brandpulse-mode-choice'><input class='form-check-input' type='radio' name='pulse_mode' value='profile' data-pulse-mode" . ($config['pulse_mode'] === 'profile' ? ' checked' : '') . "><span><strong>" . __s('Pulse by profile', 'brandpulse') . '</strong><small>' . __s('Choose a separate counter composition for each active GLPI profile.', 'brandpulse') . '</small></span></label>';
     echo "<label class='brandpulse-selfservice-choice" . ($config['pulse_mode'] === 'global' ? '' : ' d-none') . "' data-global-selfservice><input class='form-check-input' type='checkbox' name='global_selfservice_enabled' value='1'" . ($config['global_selfservice_enabled'] ? ' checked' : '') . '><span>' . __s('Also display Global Pulse for authorized self-service profiles', 'brandpulse') . '</span></label>';
     echo '</fieldset>';
+    $canEditProfiles = Session::haveRight('profile', UPDATE);
+    $profileChoices = [];
+    $allowedProfileIds = [];
+    $readonlyProfiles = [];
+    foreach ($accessRows as $accessRow) {
+        if ($accessRow['editable'] || !$canEditProfiles) {
+            $profileChoices[$accessRow['id']] = __('Profile') . ' - ' . $accessRow['name'];
+            if ($accessRow['allowed']) $allowedProfileIds[] = $accessRow['id'];
+        } elseif ($accessRow['allowed']) {
+            $readonlyProfiles[] = $accessRow['name'];
+        }
+    }
+    if ($errors !== [] && isset($selectedAccess)) {
+        $allowedProfileIds = array_values(array_filter($selectedAccess, static fn ($id): bool =>
+            filter_var($id, FILTER_VALIDATE_INT) !== false && isset($profileChoices[(int) $id])));
+    }
+    $profileDropdown = Dropdown::showFromArray('pulse_allowed_profiles', $profileChoices, [
+        'multiple' => true, 'values' => $allowedProfileIds, 'width' => '100%', 'display' => false,
+        'disabled' => !$canEditProfiles, 'aria_label' => __('Authorize specific profiles', 'brandpulse'),
+        'add_data_attributes' => ['pulse-profile-access-select' => '1'],
+    ]);
+    Glpi\Application\View\TemplateRenderer::getInstance()->display('@brandpulse/pulse_profiles.html.twig', [
+        'mode' => $config['pulse_mode'], 'can_edit' => $canEditProfiles,
+        'profile_dropdown' => $profileDropdown, 'readonly_profiles' => $readonlyProfiles,
+    ]);
     echo "<label class='brandpulse-refresh-control'><span>" . __s('Counter refresh interval, in seconds', 'brandpulse') . "</span><input class='form-control' type='number' min='15' name='refresh_interval' value='" . (int) $config['refresh_interval'] . "'></label>";
     echo "<label class='brandpulse-profile-limit-control'><span>" . __s('Maximum counters displayed', 'brandpulse') . "</span><span class='brandpulse-range-line'><input class='form-range' type='range' min='6' max='10' step='1' name='max_profile_counters' value='" . (int) $config['max_profile_counters'] . "' data-profile-counter-limit><output data-profile-counter-limit-value>" . (int) $config['max_profile_counters'] . '</output></span></label>';
     echo "<label class='brandpulse-search-control'>";
@@ -969,7 +1014,11 @@ if ($tab === 'brand') {
     echo '</div>';
 
     Glpi\Application\View\TemplateRenderer::getInstance()->display('@brandpulse/pulse_composition.html.twig', [
-        'mode' => $config['pulse_mode'], 'profiles' => $profiles,
+        'mode' => $config['pulse_mode'],
+        'profiles' => ProfileAccess::compositionProfiles($profiles, $accessRows, $selectedAccess ?? null),
+        'all_profiles' => array_map(static fn (int $id, string $name): array => ['id' => $id, 'name' => $name], array_keys($profiles), array_values($profiles)),
+        'persisted_profile_ids' => array_keys($authorizedCompositionProfiles),
+        'readonly_profile_ids' => array_column(array_filter($accessRows, static fn (array $row): bool => $row['allowed'] && !$row['editable']), 'id'),
         'selected_profile' => $selectedProfileId, 'base_url' => plugin_brandpulse_config_url('pulse'),
     ]);
 
@@ -982,11 +1031,11 @@ if ($tab === 'brand') {
     echo '</div>';
     echo '</div>';
 
-    if ($config['pulse_mode'] === 'profile' && !BrandpulseProfile::profileCanViewGeneralPulse($selectedProfileId)) {
+    if ($config['pulse_mode'] === 'profile' && $selectedProfileId > 0 && !BrandpulseProfile::profileCanViewGeneralPulse($selectedProfileId)) {
         echo "<div class='alert alert-warning mx-3 mt-3 mb-0 brandpulse-profile-right-warning' role='alert'>";
         echo "<i class='ti ti-alert-triangle' aria-hidden='true'></i><div>";
         echo '<strong>' . __s('Pulse is not authorized for this profile', 'brandpulse') . '</strong>';
-        echo '<span>' . __s('The selected counters are saved, but users will not see them until this profile is authorized in the profile panel above.', 'brandpulse') . '</span>';
+        echo '<span>' . __s('The selected counters are saved, but users will not see them until this profile is authorized in the default settings above.', 'brandpulse') . '</span>';
         echo '</div></div>';
     }
 
@@ -1088,6 +1137,7 @@ if ($tab === 'pulse') {
         : [];
     Glpi\Application\View\TemplateRenderer::getInstance()->display('@brandpulse/ticket_view.html.twig', [
         'options' => $viewOptions,
+        'fixed_columns' => Search::addDefaultToView('Ticket', []),
         'default_columns' => array_values($defaultColumns),
     ]);
 }

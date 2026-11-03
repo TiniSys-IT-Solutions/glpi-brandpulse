@@ -1,6 +1,6 @@
 msgid ""
 msgstr ""
-"Project-Id-Version: GLPI BrandPulse 0.2.8\n"
+"Project-Id-Version: GLPI BrandPulse 0.2.12\n"
 "Report-Msgid-Bugs-To: https://github.com/TiniSys-IT-Solutions/glpi-brandpulse/issues\n"
 "POT-Creation-Date: 2026-08-10 00:00+0000\n"
 "PO-Revision-Date: 2026-08-10 00:00+0000\n"
@@ -908,3 +908,33 @@ msgstr "Impossible d’enregistrer les autorisations Pulse des profils."
 
 msgid "The selected counters are saved, but users will not see them until this profile is authorized in the profile panel above."
 msgstr "Les compteurs sélectionnés sont enregistrés, mais ils ne seront visibles qu’après autorisation de ce profil dans le panneau des profils ci-dessus."
+
+msgid "Columns to display"
+msgstr "Colonnes à afficher"
+
+msgid "Drop here"
+msgstr "Déposer ici"
+
+msgid "Authorize specific profiles"
+msgstr "Autoriser spécifiquement des profils"
+
+msgid "Read only"
+msgstr "Lecture seule"
+
+msgid "Uses the native Display General Pulse permission. Save the Pulse configuration to apply this selection."
+msgstr "Utilise le droit natif Afficher Pulse général. Enregistrez la configuration Pulse pour appliquer cette sélection."
+
+msgid "selected profiles"
+msgstr "profils sélectionnés"
+
+msgid "The selected counters are saved, but users will not see them until this profile is authorized in the default settings above."
+msgstr "Les compteurs sélectionnés sont enregistrés, mais ils ne seront visibles qu’après autorisation de ce profil dans les réglages par défaut ci-dessus."
+
+msgid "No authorized profile."
+msgstr "Aucun profil autorisé."
+
+msgid "Save the profile selection first."
+msgstr "Enregistrez d’abord la sélection des profils."
+
+msgid "Select authorized profiles above, then save the Pulse configuration."
+msgstr "Sélectionnez les profils autorisés ci-dessus, puis enregistrez la configuration Pulse."

@@ -44,9 +44,4 @@ fs.writeFileSync(path.join(root, 'index.json'), JSON.stringify({
   count: entries.length,
   icons: entries,
 }));
-fs.writeFileSync(path.join(root, 'manifest.json'), JSON.stringify({
-  count: entries.length,
-  index: 'index.json',
-}));
-
 console.log(`Generated ${entries.length} Pulse icons.`);

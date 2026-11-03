@@ -91,6 +91,25 @@ final class ConfigTest extends TestCase
             Config::normalizeBranding(['favicon' => '//example.test/logo.svg'])['favicon']);
     }
 
+    public function testPublicBrandingNeverIncludesUrlCredentials(): void
+    {
+        foreach (['https://user:password@example.test/logo.svg',
+                  '//user@example.test/logo.svg'] as $reference) {
+            self::assertSame('', Config::normalizeBranding(['favicon' => $reference])['favicon']);
+        }
+    }
+
+    public function testAnonymousPayloadOmitsDisabledBrandingAndAlertDrafts(): void
+    {
+        Config::saveBranding(['enabled' => false, 'login_alert_message' => 'Unpublished fixture']);
+        self::assertSame(['enabled' => false], Config::publicBranding());
+        Config::saveBranding(['enabled' => true, 'login_alert_message' => 'Unpublished fixture']);
+        self::assertSame('', Config::publicBranding()['login_alert_message']);
+        Config::saveBranding(['enabled' => true, 'login_alert_enabled' => true,
+            'login_alert_message' => 'Published fixture']);
+        self::assertSame('Published fixture', Config::publicBranding()['login_alert_message']);
+    }
+
     public function testSavedSearchCounterGetsStableKeyAndSafeValues(): void
     {
         $counters = Config::normalizeCounters([[

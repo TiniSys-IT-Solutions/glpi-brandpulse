@@ -14,6 +14,25 @@ final class ProfileTest extends TestCase
     protected function tearDown(): void
     {
         unset($GLOBALS['DB']);
+        \ProfileRight::$added = [];
+    }
+
+    public function testNativeProfileCreationInitializesOnlyMissingRights(): void
+    {
+        $GLOBALS['DB'] = new class {
+            public int $existing = 0;
+            public function countElements(string $table, array $condition): int { return $this->existing; }
+        };
+        $profile = new \Profile();
+        $profile->fields = ['id' => 7, 'interface' => 'central'];
+        Profile::initializeProfileRights($profile);
+        self::assertSame(READ, \ProfileRight::$added[0]['rights']);
+        $profile->fields = ['id' => 8, 'interface' => 'helpdesk'];
+        Profile::initializeProfileRights($profile);
+        self::assertSame(0, \ProfileRight::$added[1]['rights']);
+        $GLOBALS['DB']->existing = 1;
+        Profile::initializeProfileRights($profile);
+        self::assertCount(2, \ProfileRight::$added);
     }
 
     public function testStoredReadBitControlsProfilePulseVisibility(): void

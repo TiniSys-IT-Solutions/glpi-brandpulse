@@ -1,11 +1,16 @@
-# GLPI BrandPulse
+<p align="center">
+  <img src="public/logo.png" alt="GLPI BrandPulse — TiniSys IT Solutions" width="220">
+</p>
 
-![Version 0.2.8](https://img.shields.io/badge/version-0.2.8-blue)
+<h1 align="center">GLPI BrandPulse</h1>
 
-![GLPI 11](https://img.shields.io/badge/GLPI-11.x-blue)
-![PHP 8.2+](https://img.shields.io/badge/PHP-8.2%2B-777bb4)
-![License GPL-3.0](https://img.shields.io/badge/license-GPL--3.0--or--later-green)
-![Status](https://img.shields.io/badge/status-active-success)
+<p align="center">
+  <img src="https://img.shields.io/badge/version-0.2.12-blue" alt="Version 0.2.12">
+  <img src="https://img.shields.io/badge/GLPI-11.x-blue" alt="GLPI 11">
+  <img src="https://img.shields.io/badge/PHP-8.2%2B-777bb4" alt="PHP 8.2+">
+  <img src="https://img.shields.io/badge/license-GPL--3.0--or--later-green" alt="License GPL-3.0-or-later">
+  <img src="https://img.shields.io/badge/status-active-success" alt="Status: active">
+</p>
 
 **GLPI BrandPulse** personnalise l'identité visuelle de GLPI et ajoute des compteurs rapides dans le header. Le plugin est pensé pour les équipes qui veulent une interface GLPI plus lisible, plus cohérente avec leur marque, et plus efficace au quotidien.
 
@@ -59,9 +64,9 @@ BrandPulse regroupe cinq espaces de configuration :
 - Ouvrir directement l'interface web d'un équipement depuis sa fiche principale,
   à partir de l'adresse IP renseignée dans ses ports réseau (HTTPS ou HTTP).
 
-Pour personnaliser un tableau de tickets, cliquez sur l’engrenage **Vue des tickets**
+Pour personnaliser un tableau de tickets, cliquez sur le bouton **Colonnes à afficher**
 de la ligne du compteur dans l’onglet **Pulse**. Désactivez **Utiliser les préférences
-GLPI**, ajoutez les colonnes, réordonnez-les avec les flèches et choisissez le champ
+GLPI**, ajoutez les colonnes, réordonnez-les par glisser-déposer natif GLPI ou avec les flèches et choisissez le champ
 et le sens du tri. Cliquez sur **Appliquer**, puis enregistrez la configuration Pulse.
 Les colonnes fixes de GLPI restent en tête. Ces réglages appartiennent au compteur
 du catalogue et s’appliquent aux profils qui l’utilisent, sans modifier les
@@ -75,11 +80,26 @@ l’ordre ; ses valeurs sont des exemples. En mode par profil, sélectionnez le
 profil dans ce panneau. Le changement de profil protège les modifications non
 enregistrées. Enregistrez la configuration Pulse pour appliquer les changements.
 
-Le panneau repliable **Profils autorisés à afficher Pulse** permet de consulter
-et modifier le droit natif **Afficher Pulse général**. Sa modification exige aussi
-le droit GLPI de modifier les profils. Son bouton d’enregistrement ne modifie pas
-les compositions. Les autorisations ne donnent aucun droit supplémentaire sur les
-tickets ; les restrictions du mode libre-service restent applicables.
+En mode **Pulse par profil**, la zone **Autoriser spécifiquement des profils**
+s’affiche dans **Réglages par défaut** sous le choix du mode. Le champ multisélection
+natif GLPI présente les profils sous forme d’étiquettes. Enregistrez la configuration
+Pulse pour appliquer cette sélection au droit natif **Afficher Pulse général**.
+La modification exige le droit GLPI de modifier les profils ; les profils en lecture
+seule et leurs autorisations sont conservés.
+
+La liste **Profil GLPI** de la composition affiche uniquement les profils autorisés.
+Elle suit immédiatement la sélection ci-dessus. Si vous retirez le profil ouvert,
+enregistrez la sélection avant d’ouvrir une autre composition ; les modifications
+en cours restent attachées à leur profil. Une sélection vide est acceptée.
+
+En mode global, le panneau repliable **Profils autorisés à afficher Pulse** conserve
+son enregistrement indépendant des compositions. Les autorisations Pulse ne donnent
+aucun droit supplémentaire sur les tickets ; les restrictions du libre-service
+restent applicables.
+
+Le bandeau, le catalogue et les colonnes utilisent le composant de glisser-déposer
+fourni par GLPI, comme les règles, avec une zone de dépôt visible. Les flèches
+restent disponibles au clavier. Les colonnes fixes suivent l’ordre imposé par GLPI.
 
 ### Visibilité de Pulse selon le profil
 
@@ -127,6 +147,9 @@ Configuration > Plugins
 - GLPI 11.x
 - PHP 8.2 ou supérieur
 
+GLPI 12 : préparation examinée sur les sources 12.0.1, compatibilité non encore
+validée. La borne maximale reste strictement inférieure à 12.0.0.
+
 ### Notes d'utilisation
 
 Pour créer des compteurs métier avancés, utilisez le moteur de recherche GLPI, sauvegardez votre recherche, puis sélectionnez-la dans l'onglet Pulse.
@@ -151,7 +174,7 @@ Les correctifs et améliorations ciblés sont les bienvenus. Consultez le
 Le [guide de contribution](CONTRIBUTING.md) décrit les contrôles PHP, JavaScript,
 Composer et les traductions. Construisez le package avec
 `./scripts/build-release.sh` : la version est lue depuis `setup.php` et le résultat
-est `dist/brandpulse-0.2.8.zip`, avec le dossier installable `dist/brandpulse/`.
+est `dist/brandpulse-0.2.12.zip`, avec le dossier installable `dist/brandpulse/`.
 Les fichiers locaux et les outils de développement sont exclus du ZIP.
 
 ### Inspirations et crédits
@@ -221,7 +244,7 @@ BrandPulse brings branding and operational visibility into one GLPI plugin with 
 - Open an asset's web management interface directly from its main form, using
   the IP address recorded on its network ports (HTTPS or HTTP).
 
-Use the **Ticket view** gear on a counter row in the **Pulse** tab to configure its
+Use the **Columns to display** button on a counter row in the **Pulse** tab to configure its
 ticket table. Turn off **Use GLPI preferences**, add and reorder columns, and
 choose the sorting field and direction. Click **Apply**, then save the Pulse
 configuration. GLPI keeps its fixed columns first. Settings belong to the counter
@@ -235,10 +258,21 @@ preview follows labels, colors, icons and order, with sample counts. In profile
 mode, select the profile in this panel; unsaved changes are protected. Save the
 Pulse configuration to apply the composition.
 
-The collapsible **Profiles authorized to display Pulse** panel manages the existing
-native **Display General Pulse** right. Changing it also requires native profile
-UPDATE permission. Its Save button does not modify counter compositions. Pulse
-authorization grants no ticket rights; self-service mode restrictions still apply.
+In **Pulse by profile** mode, **Authorize specific profiles** appears below the
+mode choices in **Default settings**, using GLPI's native multi-select with profile
+chips. Saving Pulse updates the existing native Pulse right for editable profiles;
+read-only profiles and other rights remain unchanged. Native profile UPDATE rights
+are required. Global mode keeps the separate permissions panel and Save action.
+
+The composition profile dropdown only offers authorized profiles and follows the
+native multi-selection immediately. Save permissions first when removing the loaded
+profile or adding a newly authorized profile; the loaded composition context is
+preserved. An empty authorization list is supported.
+
+Composition, catalogue rows and ticket columns use GLPI's native sortable component,
+as the rules do, with visible drop placeholders. Keyboard arrows remain available.
+Fixed ticket columns follow GLPI's native order. Pulse grants no additional ticket
+rights and self-service restrictions still apply.
 
 ### Profile-based Pulse visibility
 
@@ -285,6 +319,9 @@ Setup > Plugins
 - GLPI 11.x
 - PHP 8.2 or higher
 
+GLPI 12: preparation reviewed against the 12.0.1 sources; compatibility is not
+yet validated. The maximum version remains strictly below 12.0.0.
+
 ### Usage Notes
 
 For advanced operational counters, create a search in GLPI, save it, then select it in the Pulse tab.
@@ -308,7 +345,7 @@ Focused fixes and improvements are welcome. Read the
 
 The [contribution guide](CONTRIBUTING.md) documents PHP, JavaScript, Composer
 and translation checks. Run `./scripts/build-release.sh` to build the version
-from `setup.php` as `dist/brandpulse-0.2.8.zip` and `dist/brandpulse/`.
+from `setup.php` as `dist/brandpulse-0.2.12.zip` and `dist/brandpulse/`.
 Local files and development tooling are excluded from the archive.
 
 ### Inspirations and credits

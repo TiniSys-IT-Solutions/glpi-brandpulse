@@ -120,6 +120,28 @@ final class ProfileCounterStoreTest extends TestCase
 
         self::assertCount(8, ProfileCounterStore::assignmentsForProfile(1, $catalog));
     }
+
+    public function testCatalogRemovalAndProfilePurgeLeaveOtherAssignmentsIntact(): void
+    {
+        $database = new ProfileCounterStoreFakeDatabase();
+        $GLOBALS['DB'] = $database;
+        $catalog = [['key' => 'keep', 'enabled' => true], ['key' => 'remove', 'enabled' => true]];
+        ProfileCounterStore::install($catalog);
+        BrandpulseConfig::savePulse(true, 60, false, [
+            ['key' => 'my_tasks', 'label' => 'Tasks', 'enabled' => true],
+        ]);
+        self::assertSame([], $database->rows);
+
+        ProfileCounterStore::install($catalog);
+        ProfileCounterStore::pruneCatalog([['key' => 'keep']]);
+        self::assertSame(['keep', 'keep'], array_column($database->rows, 'counter_key'));
+        $profile = new \Profile();
+        $profile->fields['id'] = 1;
+        ProfileCounterStore::purgeProfile($profile);
+        self::assertSame([2], array_column($database->rows, 'profiles_id'));
+        ProfileCounterStore::pruneCatalog([]);
+        self::assertSame([], $database->rows);
+    }
 }
 
 final class ProfileCounterStoreFakeDatabase
@@ -187,6 +209,16 @@ final class ProfileCounterStoreFakeDatabase
 
     public function delete(string $table, array $condition): bool
     {
+        if (isset($condition['NOT']['counter_key'])) {
+            $keys = $condition['NOT']['counter_key'];
+            $this->rows = array_values(array_filter($this->rows,
+                static fn (array $row): bool => in_array($row['counter_key'], $keys, true)));
+            return true;
+        }
+        if (($condition['id'] ?? null) === ['>', 0]) {
+            $this->rows = [];
+            return true;
+        }
         $this->rows = array_values(array_filter($this->rows, static function (array $row) use ($condition): bool {
             foreach ($condition as $key => $value) {
                 if (($row[$key] ?? null) !== $value) {

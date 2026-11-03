@@ -107,6 +107,26 @@ final class ProfileCounterStore
         );
     }
 
+    /** Remove assignments only after their catalogue definitions were saved. */
+    public static function pruneCatalog(array $catalog): void
+    {
+        global $DB;
+        if (!isset($DB) || !$DB->tableExists(self::TABLE)) {
+            return;
+        }
+        $keys = array_column($catalog, 'key');
+        $DB->delete(self::TABLE, $keys === [] ? ['id' => ['>', 0]] : ['NOT' => ['counter_key' => $keys]]);
+    }
+
+    /** Called by GLPI after a profile is permanently removed. */
+    public static function purgeProfile(\CommonDBTM $profile): void
+    {
+        global $DB;
+        if ($profile instanceof \Profile && isset($DB) && $DB->tableExists(self::TABLE)) {
+            $DB->delete(self::TABLE, ['profiles_id' => (int) $profile->getID()]);
+        }
+    }
+
     public static function normalizeSubmittedAssignments(array $submitted, array $catalog): array
     {
         $validKeys = [];

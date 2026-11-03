@@ -1,6 +1,6 @@
 msgid ""
 msgstr ""
-"Project-Id-Version: GLPI BrandPulse 0.2.8\n"
+"Project-Id-Version: GLPI BrandPulse 0.2.12\n"
 "Report-Msgid-Bugs-To: https://github.com/TiniSys-IT-Solutions/glpi-brandpulse/issues\n"
 "POT-Creation-Date: 2026-08-10 00:00+0000\n"
 "PO-Revision-Date: 2026-08-10 00:00+0000\n"
@@ -908,3 +908,33 @@ msgstr "Unable to save Pulse profile permissions."
 
 msgid "The selected counters are saved, but users will not see them until this profile is authorized in the profile panel above."
 msgstr "The selected counters are saved, but users will not see them until this profile is authorized in the profile panel above."
+
+msgid "Columns to display"
+msgstr "Columns to display"
+
+msgid "Drop here"
+msgstr "Drop here"
+
+msgid "Authorize specific profiles"
+msgstr "Authorize specific profiles"
+
+msgid "Read only"
+msgstr "Read only"
+
+msgid "Uses the native Display General Pulse permission. Save the Pulse configuration to apply this selection."
+msgstr "Uses the native Display General Pulse permission. Save the Pulse configuration to apply this selection."
+
+msgid "selected profiles"
+msgstr "selected profiles"
+
+msgid "The selected counters are saved, but users will not see them until this profile is authorized in the default settings above."
+msgstr "The selected counters are saved, but users will not see them until this profile is authorized in the default settings above."
+
+msgid "No authorized profile."
+msgstr "No authorized profile."
+
+msgid "Save the profile selection first."
+msgstr "Save the profile selection first."
+
+msgid "Select authorized profiles above, then save the Pulse configuration."
+msgstr "Select authorized profiles above, then save the Pulse configuration."

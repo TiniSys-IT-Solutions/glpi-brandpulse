@@ -93,6 +93,18 @@ final class Profile extends \Profile
         }
     }
 
+    /** Initialize defaults during native profile creation, never on a GET. */
+    public static function initializeProfileRights(\CommonDBTM $profile): void
+    {
+        if ($profile instanceof \Profile) {
+            self::ensureRightForProfile(
+                new ProfileRight(),
+                (int) $profile->getID(),
+                (string) ($profile->fields['interface'] ?? 'central')
+            );
+        }
+    }
+
     public function getTabNameForItem(CommonGLPI $item, $withtemplate = 0): string
     {
         if (!$item instanceof \Profile) {
@@ -139,13 +151,6 @@ final class Profile extends \Profile
         if (!$nativeProfile->getFromDB($profileId)) {
             return;
         }
-
-        self::ensureRightForProfile(
-            new ProfileRight(),
-            $profileId,
-            (string) ($nativeProfile->fields['interface'] ?? 'central')
-        );
-        $nativeProfile->getFromDB($profileId);
 
         $canEdit = Session::haveRightsOr(self::$rightname, [CREATE, UPDATE, PURGE]);
         echo "<div class='firstbloc'>";

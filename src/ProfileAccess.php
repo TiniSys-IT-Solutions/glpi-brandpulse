@@ -31,6 +31,48 @@ final class ProfileAccess
         return $rows;
     }
 
+    /** Match composition choices to native Pulse authorization, including read-only profiles. */
+    public static function compositionProfiles(array $profiles, array $rows, ?array $selection = null): array
+    {
+        $selected = [];
+        foreach ($selection ?? [] as $value) {
+            $id = filter_var($value, FILTER_VALIDATE_INT);
+            if ($id !== false) $selected[$id] = true;
+        }
+        $allowed = [];
+        foreach ($rows as $row) {
+            $enabled = $selection !== null && $row['editable']
+                ? isset($selected[(int) $row['id']]) : $row['allowed'];
+            if ($enabled) $allowed[(int) $row['id']] = true;
+        }
+        return array_intersect_key($profiles, $allowed);
+    }
+
+    /** Convert a native multi-selection to changes without touching read-only profiles. */
+    public static function selectionChanges(array $selected, array $rows): array
+    {
+        if (!\Session::haveRight('profile', UPDATE)) {
+            throw new RuntimeException('You do not have permission to modify GLPI profiles.');
+        }
+        $editable = [];
+        foreach ($rows as $row) {
+            if ($row['editable']) $editable[(int) $row['id']] = (bool) $row['allowed'];
+        }
+        $ids = [];
+        foreach ($selected as $value) {
+            $id = filter_var($value, FILTER_VALIDATE_INT);
+            if ($id === false || !array_key_exists($id, $editable)) {
+                throw new RuntimeException('A selected profile is unavailable or cannot be modified.');
+            }
+            $ids[$id] = true;
+        }
+        $changes = [];
+        foreach ($editable as $id => $allowed) {
+            if ($allowed !== isset($ids[$id])) $changes[$id] = isset($ids[$id]) ? '1' : '0';
+        }
+        return $changes;
+    }
+
     /** Check every target before changing anything; persist through native Profile. */
     public static function save(array $submitted): void
     {

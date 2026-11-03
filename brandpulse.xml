@@ -3,7 +3,7 @@
   <name>GLPI BrandPulse</name>
   <key>brandpulse</key>
   <state>stable</state>
-  <logo>https://raw.githubusercontent.com/TiniSys-IT-Solutions/glpi-brandpulse/main/public/logo.svg</logo>
+  <logo>https://raw.githubusercontent.com/TiniSys-IT-Solutions/glpi-brandpulse/main/public/logo.png</logo>
   <description>
     Branding GLPI 11 and configurable header counters.
   </description>
@@ -27,9 +27,9 @@
   </tags>
   <versions>
     <version>
-      <num>0.2.8</num>
+      <num>0.2.12</num>
       <compatibility>^11.0</compatibility>
-      <download_url>https://github.com/TiniSys-IT-Solutions/glpi-brandpulse/releases/download/v0.2.8/brandpulse-0.2.8.zip</download_url>
+      <download_url>https://github.com/TiniSys-IT-Solutions/glpi-brandpulse/releases/download/v0.2.12/brandpulse-0.2.12.zip</download_url>
     </version>
     <version>
       <num>0.2.5</num>

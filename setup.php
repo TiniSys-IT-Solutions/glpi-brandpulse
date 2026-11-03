@@ -10,7 +10,7 @@ use GlpiPlugin\Brandpulse\Profile as BrandpulseProfile;
 
 defined('GLPI_ROOT') or die('No direct access allowed');
 
-const PLUGIN_BRANDPULSE_VERSION = '0.2.8';
+const PLUGIN_BRANDPULSE_VERSION = '0.2.12';
 const PLUGIN_BRANDPULSE_SCHEMA_VERSION = '0.1.44';
 const PLUGIN_BRANDPULSE_MIN_GLPI = '11.0.0';
 const PLUGIN_BRANDPULSE_MAX_GLPI = '12.0.0';
@@ -50,6 +50,12 @@ function plugin_init_brandpulse(): void
 
     if (class_exists(Plugin::class) && Plugin::isPluginActive('brandpulse')) {
         Plugin::registerClass(BrandpulseProfile::class, ['addtabon' => [Profile::class]]);
+        $PLUGIN_HOOKS[Hooks::ITEM_ADD]['brandpulse'] = [
+            Profile::class => [BrandpulseProfile::class, 'initializeProfileRights'],
+        ];
+        $PLUGIN_HOOKS[Hooks::ITEM_PURGE]['brandpulse'] = [
+            Profile::class => [GlpiPlugin\Brandpulse\ProfileCounterStore::class, 'purgeProfile'],
+        ];
 
         $PLUGIN_HOOKS[Hooks::ADD_CSS]['brandpulse'][] = 'css/brandpulse.css';
         $PLUGIN_HOOKS[Hooks::ADD_CSS]['brandpulse'][] = 'front/branding.css.php';

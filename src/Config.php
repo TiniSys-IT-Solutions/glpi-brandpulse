@@ -91,6 +91,19 @@ final class Config
         return $values;
     }
 
+    /** Anonymous pages need only branding that is currently enabled. */
+    public static function publicBranding(): array
+    {
+        $branding = self::values()['branding'];
+        if (!$branding['enabled']) {
+            return ['enabled' => false];
+        }
+        if (!$branding['login_alert_enabled']) {
+            $branding['login_alert_message'] = '';
+        }
+        return $branding;
+    }
+
     public static function save(array $values): void
     {
         if (!class_exists(\Config::class)) {
@@ -117,6 +130,7 @@ final class Config
         bool $globalSelfserviceEnabled = false
     ): void
     {
+        $counters = self::normalizeCounters($counters);
         self::save([
             'enabled' => $enabled ? '1' : '0',
             'refresh_interval' => (string) max(15, $refreshInterval),
@@ -124,8 +138,9 @@ final class Config
             'max_profile_counters' => (string) self::normalizeMaxProfileCounters($maxProfileCounters),
             'pulse_mode' => in_array($pulseMode, ['global', 'profile'], true) ? $pulseMode : 'global',
             'global_selfservice_enabled' => $globalSelfserviceEnabled ? '1' : '0',
-            'counters_json' => self::encodeJson(self::normalizeCounters($counters)),
+            'counters_json' => self::encodeJson($counters),
         ]);
+        ProfileCounterStore::pruneCatalog($counters);
     }
 
     public static function saveAssetManagement(bool $enabled, string $scheme, array $itemtypes): void
@@ -448,6 +463,10 @@ final class Config
 
         $parts = parse_url($value);
         if ($parts === false) {
+            return '';
+        }
+        // These URLs are exposed on the anonymous login page.
+        if (isset($parts['user']) || isset($parts['pass'])) {
             return '';
         }
         $scheme = $parts['scheme'] ?? null;

@@ -5,3 +5,20 @@
 Thumbs.db
 /dist/
 /.local/
+
+# Local credentials and tooling must never enter the public repository.
+/.agents/
+/.aws/
+/.codex/
+.env
+.env.*
+*.pem
+*.key
+*.p12
+*.pfx
+*.sql
+*.sql.gz
+*.log
+*.tmp
+*.bak
+*:Zone.Identifier

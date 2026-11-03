@@ -39,13 +39,15 @@ mkdir -p "${PACKAGE_DIR}"
 # An explicit manifest prevents local state and newly added private files from
 # silently becoming part of a public release.
 rsync -a --relative \
-  setup.php hook.php brandpulse.xml composer.json composer.lock \
+  setup.php hook.php logo.png brandpulse.xml composer.json composer.lock \
   README.md CHANGELOG.md LICENSE SECURITY.md THIRD_PARTY_NOTICES.md \
-  docs/ARCHITECTURE_SECURITY.md src front ajax public templates resources locales \
+  docs/ARCHITECTURE_SECURITY.md src front ajax public templates locales \
   "${PACKAGE_DIR}/" \
   --exclude 'AGENTS.md' --exclude '.env*' --exclude '*:Zone.Identifier' \
   --exclude '.agents/' --exclude '.aws/' --exclude '.codex/' \
-  --exclude '*.log' --exclude '*.tmp' --exclude '*.bak'
+  --exclude '*.log' --exclude '*.tmp' --exclude '*.bak' \
+  --exclude '*.pem' --exclude '*.key' --exclude '*.p12' --exclude '*.pfx' \
+  --exclude '*.sql' --exclude '*.sql.gz'
 
 (
   cd "${PACKAGE_DIR}"
@@ -63,10 +65,12 @@ archive = pathlib.Path(os.environ['ARCHIVE'])
 dist_dir = pathlib.Path(os.environ['DIST_DIR'])
 slug = os.environ['PLUGIN_SLUG']
 plugin_dir = dist_dir / slug
-required = ['setup.php', 'hook.php', 'vendor/autoload.php', 'src/Config.php',
+required = ['setup.php', 'hook.php', 'logo.png', 'public/logo.png', 'public/logo.svg',
+            'vendor/autoload.php', 'src/Config.php',
             'src/AssetManagementLink.php', 'src/TicketView.php',
             'templates/ticket_view.html.twig', 'src/ProfileAccess.php',
             'templates/pulse_composition.html.twig', 'templates/pulse_profiles.html.twig',
+            'templates/pulse_profile_permissions.html.twig',
             'public/js/brandpulse.js',
             'public/icons/pulse/index.json', 'locales/fr_FR.mo', 'locales/en_GB.mo']
 for name in required:
@@ -80,7 +84,8 @@ timestamp = time.gmtime(max(315532800, int(os.environ.get('SOURCE_DATE_EPOCH', '
 with zipfile.ZipFile(archive, 'w', zipfile.ZIP_DEFLATED) as zf:
     for path in sorted(plugin_dir.rglob('*')):
         relative = path.relative_to(plugin_dir)
-        if forbidden.intersection(relative.parts) or path.name.startswith('.env'):
+        if (forbidden.intersection(relative.parts) or path.name.startswith('.env')
+                or path.name.endswith(('.pem', '.key', '.p12', '.pfx', '.sql', '.sql.gz', '.log', '.tmp', '.bak', ':Zone.Identifier'))):
             raise SystemExit(f'Forbidden release file: {relative}')
         if path.is_symlink():
             raise SystemExit(f'Symlink in release: {relative}')

@@ -17,8 +17,16 @@ if (!function_exists('__')) {
     }
 }
 
+if (!class_exists('CommonDBTM')) {
+    class CommonDBTM
+    {
+        public array $fields = [];
+        public function getID(): int { return (int) ($this->fields['id'] ?? 0); }
+    }
+}
+
 if (!class_exists('Profile')) {
-    class Profile
+    class Profile extends CommonDBTM
     {
         public static array $allowedIds = [1, 2];
         public static array $updates = [];
@@ -39,6 +47,8 @@ if (!class_exists('Profile')) {
 if (!class_exists('ProfileRight')) {
     class ProfileRight
     {
+        public static array $added = [];
+        public function add(array $input): int { self::$added[] = $input; return count(self::$added); }
         public static function getTable(): string
         {
             return 'glpi_profilerights';

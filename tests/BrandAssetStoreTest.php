@@ -6,10 +6,38 @@ namespace GlpiPlugin\Brandpulse\Tests;
 
 use GlpiPlugin\Brandpulse\BrandAssetStore;
 use PHPUnit\Framework\Attributes\DataProvider;
+use PHPUnit\Framework\Attributes\RunInSeparateProcess;
 use PHPUnit\Framework\TestCase;
 
 final class BrandAssetStoreTest extends TestCase
 {
+    #[RunInSeparateProcess]
+    public function testPublicAssetResolutionRejectsUnrelatedFilesAndEscapingSymlinks(): void
+    {
+        $directory = sys_get_temp_dir() . '/brandpulse-assets-' . bin2hex(random_bytes(8));
+        define('GLPI_PLUGIN_DOC_DIR', $directory);
+        self::assertTrue(BrandAssetStore::ensureBrandDirectory());
+        $brand = BrandAssetStore::brandDirectory();
+        file_put_contents($brand . '/logo.svg', '<svg/>');
+        file_put_contents($brand . '/backup.sql', 'private fixture');
+        file_put_contents($brand . '/.hidden.svg', 'private fixture');
+        file_put_contents($directory . '/outside.svg', 'outside fixture');
+        symlink($directory . '/outside.svg', $brand . '/link.svg');
+        try {
+            self::assertSame($brand . '/logo.svg', BrandAssetStore::assetPath('logo.svg'));
+            foreach (['backup.sql', '.hidden.svg', '../logo.svg', 'x\\logo.svg',
+                      "logo.svg\0", 'link.svg', 'missing.svg'] as $file) {
+                self::assertNull(BrandAssetStore::assetPath($file), $file);
+            }
+        } finally {
+            foreach (['logo.svg', 'backup.sql', '.hidden.svg', 'link.svg'] as $file) unlink($brand . '/' . $file);
+            unlink($directory . '/outside.svg');
+            rmdir($brand);
+            rmdir(dirname($brand));
+            rmdir($directory);
+        }
+    }
+
     public function testStaticSvgWithLocalReferencesAndStylesIsAccepted(): void
     {
         self::assertTrue(BrandAssetStore::isSafeSvg('<svg xmlns="http://www.w3.org/2000/svg">

@@ -21,9 +21,8 @@ try {
         require_once $autoload;
     }
 
-    $config = GlpiPlugin\Brandpulse\Config::values();
     $payload = [
-        'branding' => $config['branding'],
+        'branding' => GlpiPlugin\Brandpulse\Config::publicBranding(),
     ];
 } catch (Throwable) {
     $payload['branding']['enabled'] = false;

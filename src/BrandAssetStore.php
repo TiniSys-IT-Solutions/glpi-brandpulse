@@ -96,8 +96,13 @@ final class BrandAssetStore
 
     public static function assetPath(string $filename): ?string
     {
-        $filename = basename(str_replace('\\', '/', $filename));
-        if ($filename === '' || $filename === '.' || $filename === '..') {
+        // This directory is publicly readable through front/asset.php. Never
+        // serve unrelated files accidentally placed beside the uploaded images.
+        if ($filename === '' || str_contains($filename, "\0")
+            || str_contains($filename, '/') || str_contains($filename, '\\')
+            || str_starts_with($filename, '.')
+            || !in_array(strtolower(pathinfo($filename, PATHINFO_EXTENSION)),
+                ['svg', 'png', 'jpg', 'jpeg', 'gif', 'webp', 'ico'], true)) {
             return null;
         }
 

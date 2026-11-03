@@ -73,6 +73,52 @@ final class ProfileAccessTest extends TestCase
         self::assertSame(1, \Session::$reloads);
     }
 
+    public function testCompositionChoicesContainOnlyAuthorizedProfilesInCatalogueOrder(): void
+    {
+        $profiles = [2 => 'Second', 1 => 'First', 3 => 'Read only'];
+        $rows = [
+            ['id' => 1, 'allowed' => true, 'editable' => true],
+            ['id' => 2, 'allowed' => false, 'editable' => true],
+            ['id' => 3, 'allowed' => true, 'editable' => false],
+        ];
+        self::assertSame([1 => 'First', 3 => 'Read only'], ProfileAccess::compositionProfiles($profiles, $rows));
+        self::assertSame([2 => 'Second', 3 => 'Read only'], ProfileAccess::compositionProfiles($profiles, $rows, ['2']));
+        self::assertSame([3 => 'Read only'], ProfileAccess::compositionProfiles($profiles, $rows, []));
+        self::assertSame([], ProfileAccess::compositionProfiles($profiles, []));
+    }
+
+    public function testSelectionOnlyChangesEditableProfilesAndKeepsOtherPermissions(): void
+    {
+        $rows = [
+            ['id' => 1, 'editable' => true, 'allowed' => true],
+            ['id' => 2, 'editable' => true, 'allowed' => false],
+            ['id' => 3, 'editable' => false, 'allowed' => true],
+        ];
+        self::assertSame([1 => '0', 2 => '1'], ProfileAccess::selectionChanges(['2', '2'], $rows));
+        self::assertSame([1 => '0'], ProfileAccess::selectionChanges([], $rows));
+        self::assertSame([], ProfileAccess::selectionChanges(['1'], $rows));
+    }
+
+    public function testSelectionRejectsUnknownOrReadOnlyTargets(): void
+    {
+        $rows = [['id' => 1, 'editable' => true, 'allowed' => false]];
+        foreach ([[99], [['nested']], ['malformed']] as $selected) {
+            try {
+                ProfileAccess::selectionChanges($selected, $rows);
+                self::fail('Invalid selection accepted');
+            } catch (RuntimeException $exception) {
+                self::assertStringContainsString('cannot be modified', $exception->getMessage());
+            }
+        }
+    }
+
+    public function testSelectionRequiresNativeProfileUpdateRight(): void
+    {
+        \Session::$brandpulseRight = false;
+        $this->expectException(RuntimeException::class);
+        ProfileAccess::selectionChanges([], []);
+    }
+
     public function testRollsBackWhenANativeProfileUpdateFails(): void
     {
         \Profile::$failId = 2;

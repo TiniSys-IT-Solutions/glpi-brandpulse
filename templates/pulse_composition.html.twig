@@ -3,22 +3,30 @@
         <strong>{{ __('Header composition', 'brandpulse') }}</strong>
         {% if mode == 'profile' %}
             <label class="brandpulse-inline-profile"><span>{{ __('GLPI profile', 'brandpulse') }}</span>
-                <select class="form-select form-select-sm" name="profile_id" data-pulse-profile-select data-base-url="{{ base_url }}" data-saved-profile="{{ selected_profile }}">
+                <select class="form-select form-select-sm" data-pulse-profile-select data-base-url="{{ base_url }}" data-saved-profile="{{ selected_profile }}"
+                        data-empty-label="{{ __('No authorized profile.', 'brandpulse') }}"
+                        data-save-first-label="{{ __('Save the profile selection first.', 'brandpulse') }}"
+                        data-select-profiles-label="{{ __('Select authorized profiles above, then save the Pulse configuration.', 'brandpulse') }}"
+                        data-profile-options="{{ all_profiles|json_encode }}" data-persisted-profile-ids="{{ persisted_profile_ids|json_encode }}"
+                        data-readonly-profile-ids="{{ readonly_profile_ids|json_encode }}" {% if profiles is empty %}disabled{% endif %}>
+                    {% if profiles is empty %}<option value="">{{ __('No authorized profile.', 'brandpulse') }}</option>{% endif %}
                     {% for id, name in profiles %}<option value="{{ id }}" {% if id == selected_profile %}selected{% endif %}>{{ name }}</option>{% endfor %}
                 </select>
+                <input type="hidden" name="profile_id" value="{{ selected_profile }}">
             </label>
         {% else %}<span class="text-muted">{{ __('Shared composition', 'brandpulse') }}</span>{% endif %}
     </div>
+    <div class="alert alert-info mx-3 mt-3 mb-0 d-none" data-pulse-profile-selection-status role="status"></div>
     <div class="card-body">
         <div class="d-flex justify-content-between gap-2 mb-2"><strong>{{ __('Displayed counters', 'brandpulse') }}</strong><span data-pulse-active-count aria-live="polite"></span></div>
         <p class="text-muted">{{ __('Drag a handle to reorder counters, or use the arrows. Preview values are examples.', 'brandpulse') }}</p>
-        <div class="brandpulse-composition-list" data-pulse-composition-active></div>
+        <ul id="brandpulse-composition-active" class="list-group brandpulse-composition-list" data-pulse-composition-active></ul>
         <div class="brandpulse-composition-preview mt-3">
             <strong>{{ __('Header preview', 'brandpulse') }}</strong>
             <div class="brandpulse-profile-preview-counters" data-profile-counter-preview></div>
         </div>
         <strong class="d-block mt-3 mb-2">{{ __('Available counters', 'brandpulse') }}</strong>
-        <div class="brandpulse-composition-list" data-pulse-composition-available></div>
+        <ul class="list-group brandpulse-composition-list" data-pulse-composition-available></ul>
         <div class="visually-hidden" data-pulse-move-announcement role="status" aria-live="polite"></div>
     </div>
     <div class="card-footer brandpulse-composition-save">

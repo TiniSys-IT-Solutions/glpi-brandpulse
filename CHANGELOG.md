@@ -2,8 +2,62 @@
 
 All notable public changes to GLPI BrandPulse are documented here.
 
-Detailed pre-public iterations remain available in
-[docs/DEVELOPMENT_HISTORY.md](docs/DEVELOPMENT_HISTORY.md).
+## [0.2.12] - 2026-11-03
+
+### Added
+
+- Display the BrandPulse logo in GLPI's native plugin management using a bundled
+  PNG converted from the existing SVG artwork.
+- Add a centered logo, title and badges to the GitHub README, following the
+  presentation used by other TiniSys plugins.
+- Include both PNG logo locations and the SVG source in release package checks.
+
+## [0.2.11] - 2026-11-01
+
+### Fixed
+
+- Prevent public image URLs from containing embedded credentials, and omit
+  disabled branding and unpublished login alerts from the public JSON response.
+- Restrict uploaded asset serving to image filenames inside the branding folder.
+- Remove stale counter assignments when catalogue entries or GLPI profiles are removed.
+- Initialize default Pulse rights during native profile creation instead of
+  changing rights when the profile tab is merely viewed.
+- Strengthen Git exclusions for credentials and local development files; keep
+  pre-public working history outside the public source tree.
+- Remove unused icon-manifest output and the empty resource-directory build input.
+
+### Compatibility
+
+- Review the GLPI 12.0.1 extension APIs and document remaining validation work.
+  Supported versions remain GLPI 11.x; GLPI 12 compatibility is not yet declared.
+
+## [0.2.10] - 2026-10-09
+
+### Fixed
+
+- Limit the composition profile dropdown to the profiles authorized in Default
+  settings, updating its options immediately when the native selection changes.
+- Preserve read-only authorized profiles, handle an empty profile selection and
+  resolve a removed profile to an authorized one after saving and reloading.
+- Keep the loaded composition context while editing permissions. Removing the
+  current profile or selecting a newly authorized profile requires saving first,
+  preventing accidental changes to another profile's counter assignments.
+- Render profile selection counts and guidance using server-side translations.
+
+## [0.2.9] - 2026-10-09
+
+### Changed
+
+- Reuse GLPI's native html5sortable bundle for Pulse composition, catalogue rows
+  and ticket columns, including native drag feedback and visible drop placeholders.
+- Show fixed ticket columns in GLPI's exact native order. Preserve keyboard arrows
+  and prevent custom-column dragging while native display preferences are selected.
+- Replace the ticket-view gear with GLPI's native `ti-table-row` icon and the
+  stable label "Columns to display".
+- Add a native multi-select profile field under Default settings in profile mode.
+  Saving Pulse applies changes to native Pulse rights for editable profiles only;
+  read-only profiles and their other rights remain untouched. Global mode keeps
+  the separate native-permissions panel.
 
 ## [0.2.8] - 2026-10-09
 
