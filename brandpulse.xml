@@ -5,7 +5,7 @@
   <state>stable</state>
   <logo>https://raw.githubusercontent.com/TiniSys-IT-Solutions/glpi-brandpulse/main/public/logo.png</logo>
   <description>
-    Branding GLPI 11 and configurable header counters.
+    Branding GLPI 12 and configurable header counters.
   </description>
   <homepage>https://github.com/TiniSys-IT-Solutions/glpi-brandpulse</homepage>
   <download>https://github.com/TiniSys-IT-Solutions/glpi-brandpulse/releases</download>
@@ -26,6 +26,11 @@
     <tag>notifications</tag>
   </tags>
   <versions>
+    <version>
+      <num>0.3.0</num>
+      <compatibility>^12.0</compatibility>
+      <download_url>https://github.com/TiniSys-IT-Solutions/glpi-brandpulse/releases/download/v0.3.0/brandpulse-0.3.0.zip</download_url>
+    </version>
     <version>
       <num>0.2.12</num>
       <compatibility>^11.0</compatibility>

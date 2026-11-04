@@ -1,13 +1,18 @@
 <p align="center">
+
+> Branche `glpi-v12` : version 0.3.0 pour GLPI 12.0.x et PHP 8.3+.
+> Les versions GLPI 11 restent disponibles sur `main` et dans les tags précédents.
+> Migration en cours de revue ; voir `docs/GLPI12_MIGRATION.md` pour les contrôles et limites.
+
   <img src="public/logo.png" alt="GLPI BrandPulse — TiniSys IT Solutions" width="220">
 </p>
 
 <h1 align="center">GLPI BrandPulse</h1>
 
 <p align="center">
-  <img src="https://img.shields.io/badge/version-0.2.12-blue" alt="Version 0.2.12">
-  <img src="https://img.shields.io/badge/GLPI-11.x-blue" alt="GLPI 11">
-  <img src="https://img.shields.io/badge/PHP-8.2%2B-777bb4" alt="PHP 8.2+">
+  <img src="https://img.shields.io/badge/version-0.3.0-blue" alt="Version 0.3.0">
+  <img src="https://img.shields.io/badge/GLPI-12.x-blue" alt="GLPI 12">
+  <img src="https://img.shields.io/badge/PHP-8.3%2B-777bb4" alt="PHP 8.3+">
   <img src="https://img.shields.io/badge/license-GPL--3.0--or--later-green" alt="License GPL-3.0-or-later">
   <img src="https://img.shields.io/badge/status-active-success" alt="Status: active">
 </p>
@@ -144,8 +149,8 @@ Configuration > Plugins
 
 ### Compatibilité
 
-- GLPI 11.x
-- PHP 8.2 ou supérieur
+- GLPI 12.x
+- PHP 8.3 ou supérieur
 
 ### Notes d'utilisation
 
@@ -171,7 +176,7 @@ Les correctifs et améliorations ciblés sont les bienvenus. Consultez le
 Le [guide de contribution](CONTRIBUTING.md) décrit les contrôles PHP, JavaScript,
 Composer et les traductions. Construisez le package avec
 `./scripts/build-release.sh` : la version est lue depuis `setup.php` et le résultat
-est `dist/brandpulse-0.2.12.zip`, avec le dossier installable `dist/brandpulse/`.
+est `dist/brandpulse-0.3.0.zip`, avec le dossier installable `dist/brandpulse/`.
 Les fichiers locaux et les outils de développement sont exclus du ZIP.
 
 ### Inspirations et crédits
@@ -180,7 +185,7 @@ BrandPulse s'appuie sur l'expérience acquise avec plusieurs personnalisations
 et extensions GLPI existantes autour de l'identité visuelle et des indicateurs
 opérationnels. Le plugin actuel possède toutefois sa propre architecture, son
 propre modèle de configuration, ses mécanismes de sécurité et ses intégrations
-GLPI 11. Il est développé et maintenu comme un projet autonome par TiniSys IT
+GLPI 12. Il est développé et maintenu comme un projet autonome par TiniSys IT
 Solutions.
 
 Le sélecteur d'icônes contient une sélection adaptée du Solar Icon Set. Les
@@ -313,8 +318,8 @@ Setup > Plugins
 
 ### Compatibility
 
-- GLPI 11.x
-- PHP 8.2 or higher
+- GLPI 12.x
+- PHP 8.3 or higher
 
 ### Usage Notes
 
@@ -339,7 +344,7 @@ Focused fixes and improvements are welcome. Read the
 
 The [contribution guide](CONTRIBUTING.md) documents PHP, JavaScript, Composer
 and translation checks. Run `./scripts/build-release.sh` to build the version
-from `setup.php` as `dist/brandpulse-0.2.12.zip` and `dist/brandpulse/`.
+from `setup.php` as `dist/brandpulse-0.3.0.zip` and `dist/brandpulse/`.
 Local files and development tooling are excluded from the archive.
 
 ### Inspirations and credits
@@ -347,7 +352,7 @@ Local files and development tooling are excluded from the archive.
 BrandPulse builds on experience gained from several existing GLPI
 customisations and extensions dealing with visual identity and operational
 indicators. The current plugin nevertheless has its own architecture,
-configuration model, security controls and GLPI 11 integrations. It is
+configuration model, security controls and GLPI 12 integrations. It is
 developed and maintained as an independent project by TiniSys IT Solutions.
 
 The icon picker contains an adapted selection from the Solar Icon Set.

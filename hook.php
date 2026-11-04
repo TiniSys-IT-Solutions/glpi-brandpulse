@@ -43,7 +43,7 @@ function plugin_brandpulse_pre_item_form(array $params): void
         return;
     }
 
-    $itemtype = $item::getType();
+    $itemtype = $item::class;
     $config = GlpiPlugin\Brandpulse\Config::values();
     if (
         !$config['asset_management_enabled']
