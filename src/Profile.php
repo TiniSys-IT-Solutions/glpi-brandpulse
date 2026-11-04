@@ -12,7 +12,7 @@ final class Profile extends \Profile
 {
     public const RIGHT_VIEW_GENERAL_PULSE = 'plugin_brandpulse_view_general_pulse';
 
-    public static $rightname = 'profile';
+    public static string $rightname = 'profile';
 
     public static function getAllRights(): array
     {
@@ -111,7 +111,7 @@ final class Profile extends \Profile
             return '';
         }
 
-        return self::createTabEntry(__('BrandPulse', 'brandpulse'), 0, $item::getType(), 'ti ti-activity');
+        return self::createTabEntry(__('BrandPulse', 'brandpulse'), 0, $item::class, 'ti ti-activity');
     }
 
     public static function displayTabContentForItem(CommonGLPI $item, $tabnum = 1, $withtemplate = 0): bool

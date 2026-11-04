@@ -10,11 +10,11 @@ use GlpiPlugin\Brandpulse\Profile as BrandpulseProfile;
 
 defined('GLPI_ROOT') or die('No direct access allowed');
 
-const PLUGIN_BRANDPULSE_VERSION = '0.2.12';
+const PLUGIN_BRANDPULSE_VERSION = '0.3.0';
 const PLUGIN_BRANDPULSE_SCHEMA_VERSION = '0.1.44';
-const PLUGIN_BRANDPULSE_MIN_GLPI = '11.0.0';
-const PLUGIN_BRANDPULSE_MAX_GLPI = '12.0.0';
-const PLUGIN_BRANDPULSE_MIN_PHP = '8.2.0';
+const PLUGIN_BRANDPULSE_MIN_GLPI = '12.0.0';
+const PLUGIN_BRANDPULSE_MAX_GLPI = '12.1.0';
+const PLUGIN_BRANDPULSE_MIN_PHP = '8.3.0';
 
 function plugin_brandpulse_autoload(): void
 {
@@ -31,7 +31,6 @@ function plugin_init_brandpulse(): void
 
     plugin_brandpulse_autoload();
 
-    $PLUGIN_HOOKS['csrf_compliant']['brandpulse'] = true;
     $PLUGIN_HOOKS['config_page']['brandpulse'] = 'front/config.php';
     $PLUGIN_HOOKS[Hooks::MENU_TOADD]['brandpulse'] = [
         'tools' => BrandpulseMenu::class,

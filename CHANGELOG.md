@@ -2,6 +2,14 @@
 
 All notable public changes to GLPI BrandPulse are documented here.
 
+## 0.3.0 - 2026-11-04
+
+### Changed
+
+- Target GLPI 12.0.x and PHP 8.3 or newer on the dedicated migration branch.
+- Match native typed model properties and use PHP class names for item types.
+- Validate native model loading, plugin lifecycle and synthetic regressions against GLPI 12.0.1.
+
 ## [0.2.12] - 2026-11-03
 
 ### Added
