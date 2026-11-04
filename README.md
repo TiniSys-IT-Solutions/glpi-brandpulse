@@ -147,9 +147,6 @@ Configuration > Plugins
 - GLPI 11.x
 - PHP 8.2 ou supérieur
 
-GLPI 12 : préparation examinée sur les sources 12.0.1, compatibilité non encore
-validée. La borne maximale reste strictement inférieure à 12.0.0.
-
 ### Notes d'utilisation
 
 Pour créer des compteurs métier avancés, utilisez le moteur de recherche GLPI, sauvegardez votre recherche, puis sélectionnez-la dans l'onglet Pulse.
@@ -318,9 +315,6 @@ Setup > Plugins
 
 - GLPI 11.x
 - PHP 8.2 or higher
-
-GLPI 12: preparation reviewed against the 12.0.1 sources; compatibility is not
-yet validated. The maximum version remains strictly below 12.0.0.
 
 ### Usage Notes
 

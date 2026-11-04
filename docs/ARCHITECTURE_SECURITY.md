@@ -162,35 +162,3 @@ context allows saving settings without inventing a profile assignment. The clien
 uses the native multi-select's selected options plus immutable authorized IDs.
 A separate hidden profile ID keeps the loaded form context stable during filtering.
 Removing that profile or selecting an unsaved authorization requires saving first.
-
-## GLPI 12 preparation
-
-GLPI 12 is not yet a supported runtime. The declared upper bound remains
-`<12.0.0`; a source review alone does not justify changing it.
-
-A review of the GLPI 12.0.1 sources confirms that the used Search wrappers
-(`getDatas`, `manageParams`, `getCleanedOptions`, `addDefaultToView`), plugin
-asset hooks, `PRE_ITEM_FORM`, `ITEM_PURGE` and legacy-script firewall registration
-remain available. No core patch or new dependency is required by these findings.
-GLPI 12 itself requires PHP 8.3 or newer.
-
-Before enabling GLPI 12 support, validate on an installed test instance:
-
-- Profile-specific excluded search options: native `SearchOption` marks them
-  `nosearch` and `nodisplay`. Check counter filters, saved searches, ticket columns
-  and sorting for restricted profiles, including empty results and meta criteria.
-- Native reauthentication: `CommonDBTM::can` now considers reauthentication.
-  Pulse permission controls must offer the native reauthentication flow when
-  appropriate, rather than presenting a permanently read-only profile selector.
-- CSRF handling: the native `CheckCsrfListener` now validates request-origin
-  headers. Keep GLPI 11 token support and test accepted/rejected form and AJAX
-  submissions through the native kernel on both major versions.
-- Prepared database queries: continue passing values through GLPI's structured
-  request/insert/delete APIs. The existing raw DDL and orphan-profile cleanup
-  contain only fixed or native table identifiers, with no browser values.
-- Branding, dark mode, login, central/self-service headers, native sortable lists,
-  multi-entity rights, install, upgrade, disable and uninstall behavior.
-
-Sources: [GLPI 12 overview](https://www.glpi-project.org/en/glpi-12/),
-[GLPI 12.0.1 source](https://github.com/glpi-project/glpi/tree/12.0.1),
-and the corresponding native classes named above.

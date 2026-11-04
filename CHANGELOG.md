@@ -26,11 +26,6 @@ All notable public changes to GLPI BrandPulse are documented here.
   pre-public working history outside the public source tree.
 - Remove unused icon-manifest output and the empty resource-directory build input.
 
-### Compatibility
-
-- Review the GLPI 12.0.1 extension APIs and document remaining validation work.
-  Supported versions remain GLPI 11.x; GLPI 12 compatibility is not yet declared.
-
 ## [0.2.10] - 2026-10-09
 
 ### Fixed
