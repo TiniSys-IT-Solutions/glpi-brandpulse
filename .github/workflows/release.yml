@@ -61,10 +61,14 @@ jobs:
           VERSION="${GITHUB_REF_NAME#v}"
           ARCHIVE="dist/brandpulse-${VERSION}.zip"
 
+          release_flags=(--verify-tag)
+          if [[ "$VERSION" == *-glpi12-beta.* ]]; then
+            release_flags+=(--prerelease --latest=false)
+          fi
           if gh release view "${GITHUB_REF_NAME}" >/dev/null 2>&1; then
             gh release upload "${GITHUB_REF_NAME}" "${ARCHIVE}"
           else
-            gh release create "${GITHUB_REF_NAME}" "${ARCHIVE}" \
+            gh release create "${GITHUB_REF_NAME}" "${ARCHIVE}" "${release_flags[@]}" \
               --title "GLPI BrandPulse ${GITHUB_REF_NAME}" \
               --notes-file dist/release-notes.md
           fi

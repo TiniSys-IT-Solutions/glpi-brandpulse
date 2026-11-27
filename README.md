@@ -1,6 +1,6 @@
 <p align="center">
 
-> Branche `glpi-v12` : version 0.3.0 pour GLPI 12.0.x et PHP 8.3+.
+> Branche `glpi-v12` : version 0.3.0-glpi12-beta.1 pour GLPI 12.0.x et PHP 8.3+.
 > Les versions GLPI 11 restent disponibles sur `main` et dans les tags précédents.
 > Migration en cours de revue ; voir `docs/GLPI12_MIGRATION.md` pour les contrôles et limites.
 
@@ -10,7 +10,7 @@
 <h1 align="center">GLPI BrandPulse</h1>
 
 <p align="center">
-  <img src="https://img.shields.io/badge/version-0.3.0-blue" alt="Version 0.3.0">
+  <img src="https://img.shields.io/badge/version-0.3.0-blue" alt="Version 0.3.0-glpi12-beta.1">
   <img src="https://img.shields.io/badge/GLPI-12.x-blue" alt="GLPI 12">
   <img src="https://img.shields.io/badge/PHP-8.3%2B-777bb4" alt="PHP 8.3+">
   <img src="https://img.shields.io/badge/license-GPL--3.0--or--later-green" alt="License GPL-3.0-or-later">
@@ -176,7 +176,7 @@ Les correctifs et améliorations ciblés sont les bienvenus. Consultez le
 Le [guide de contribution](CONTRIBUTING.md) décrit les contrôles PHP, JavaScript,
 Composer et les traductions. Construisez le package avec
 `./scripts/build-release.sh` : la version est lue depuis `setup.php` et le résultat
-est `dist/brandpulse-0.3.0.zip`, avec le dossier installable `dist/brandpulse/`.
+est `dist/brandpulse-0.3.0-glpi12-beta.1.zip`, avec le dossier installable `dist/brandpulse/`.
 Les fichiers locaux et les outils de développement sont exclus du ZIP.
 
 ### Inspirations et crédits
@@ -344,7 +344,7 @@ Focused fixes and improvements are welcome. Read the
 
 The [contribution guide](CONTRIBUTING.md) documents PHP, JavaScript, Composer
 and translation checks. Run `./scripts/build-release.sh` to build the version
-from `setup.php` as `dist/brandpulse-0.3.0.zip` and `dist/brandpulse/`.
+from `setup.php` as `dist/brandpulse-0.3.0-glpi12-beta.1.zip` and `dist/brandpulse/`.
 Local files and development tooling are excluded from the archive.
 
 ### Inspirations and credits
