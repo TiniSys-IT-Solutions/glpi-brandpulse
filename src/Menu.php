@@ -9,7 +9,7 @@ use Session;
 
 class Menu extends CommonGLPI
 {
-    public static $rightname = 'config';
+    public static string $rightname = 'config';
 
     public static function getTypeName($nb = 0): string
     {

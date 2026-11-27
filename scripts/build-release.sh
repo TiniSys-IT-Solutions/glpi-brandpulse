@@ -17,7 +17,7 @@ done
 PLUGIN_VERSION="$(sed -n "s/^const PLUGIN_BRANDPULSE_VERSION = '\([^']*\)';/\1/p" setup.php)"
 TAG_NAME="${1:-${PLUGIN_VERSION}}"
 VERSION="${TAG_NAME#v}"
-if [[ ! "${VERSION}" =~ ^[0-9]+\.[0-9]+\.[0-9]+$ || "${VERSION}" != "${PLUGIN_VERSION}" ]]; then
+if [[ ! "${VERSION}" =~ ^[0-9]+\.[0-9]+\.[0-9]+(-glpi12-beta\.[1-9][0-9]*)?$ || "${VERSION}" != "${PLUGIN_VERSION}" ]]; then
   echo "Build version ${TAG_NAME} does not match plugin version ${PLUGIN_VERSION}" >&2
   exit 1
 fi

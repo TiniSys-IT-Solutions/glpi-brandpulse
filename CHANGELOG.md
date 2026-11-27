@@ -2,6 +2,16 @@
 
 All notable public changes to GLPI BrandPulse are documented here.
 
+## [0.3.0-glpi12-beta.1] - 2026-11-27
+
+First version compatible with GLPI 12.
+
+Préversion qualifiée sur GLPI 12.0.2. PHP 8.3 minimum.
+
+- Align typed plugin models and relations with GLPI 12, and identify native item types by their PHP class.
+- Use the native GLPI 12 request-origin protection and preserve profile-scoped counters and entity access.
+- Verify installation, upgrade and counter rendering in Chromium on GLPI 12.0.2.
+
 ## [0.2.12] - 2026-11-03
 
 ### Added

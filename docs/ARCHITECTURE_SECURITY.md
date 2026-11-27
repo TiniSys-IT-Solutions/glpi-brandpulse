@@ -1,7 +1,7 @@
 # Architecture and security baseline
 
 This document records the reviewed baseline for BrandPulse 0.2.12 against the
-local GLPI 11.0.8 and 11.0.11 sources and TiniSys development reference 1.0.
+local GLPI 12.0.8 and 11.0.11 sources and TiniSys development reference 1.0.
 It is intended for maintainers and release reviews. Loading native classes and
 checking their signatures does not replace testing on an installed GLPI instance.
 
@@ -79,7 +79,7 @@ links use `CommonDBTM::can($id, READ)` to check both type rights and entity scop
 
 Each release must run Composer validation and audit, PHPUnit, PHP and JavaScript
 syntax checks, XML validation, GitHub Actions validation, translation catalogue
-loading, GLPI 11.0.8 class integration and archive-content checks. Development
+loading, GLPI 12.0.8 class integration and archive-content checks. Development
 state (`.local`, tests, CI files and build output) must remain outside the
 release archive. The build uses an explicit file manifest and validates required
 files, archive integrity and forbidden paths before reporting success. It produces

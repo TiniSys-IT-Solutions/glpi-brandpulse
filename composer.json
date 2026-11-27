@@ -1,6 +1,6 @@
 {
   "name": "tinisys-it-solutions/glpi-brandpulse",
-  "description": "GLPI 11 branding and configurable header counters plugin.",
+  "description": "GLPI 12 branding and configurable header counters plugin.",
   "type": "glpi-plugin",
   "license": "GPL-3.0-or-later",
   "authors": [
@@ -9,7 +9,7 @@
     }
   ],
   "require": {
-    "php": ">=8.2",
+    "php": ">=8.3",
     "ext-dom": "*",
     "ext-fileinfo": "*"
   },
@@ -23,7 +23,8 @@
   },
   "config": {
     "optimize-autoloader": true,
-    "sort-packages": true
+    "sort-packages": true,
+    "autoloader-suffix": "PluginBrandpulse"
   },
   "scripts": {
     "compile-translations": "php scripts/compile-translations.php",
